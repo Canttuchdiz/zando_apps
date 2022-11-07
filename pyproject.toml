@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "app-bot"
+version = "0.1.0"
+description = "Bot used for many things."
+authors = ["canttuchdiz <hgoldrich@gmail.com>"]
+readme = "README.md"
+packages = [{include = "app_bot"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.group.dev.dependencies]
+"discord.py" = "^2.0.1"
+dotenv = "^0.0.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,4 +1,4 @@
-from src import *
+from zando import *
 from typing import *
 from discord.ext.commands import *
 

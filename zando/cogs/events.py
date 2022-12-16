@@ -1,5 +1,5 @@
-from src import *
-from src.utils import UtilMethods, UTILS_DIR
+from zando import *
+from zando.utils import UtilMethods, UTILS_DIR
 
 
 class Events(commands.Cog):

@@ -1,5 +1,8 @@
 import aiofiles
 import json
+import prisma
+import traceback
+import enum
 
 class UtilMethods:
 
@@ -15,4 +18,10 @@ class UtilMethods:
         with open(path, encoding='utf-8') as f:
             content = f.read()
             return json.loads(content)
+
+
+
+class TableTypes:
+
+    options: list = ['question', "application"]
 

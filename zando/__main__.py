@@ -1,6 +1,10 @@
-from .imports import *
-from src.utils import UtilMethods
+from .utils import UtilMethods
 from pathlib import Path
+from dotenv import load_dotenv
+import discord
+from discord.ext import commands
+import os
+import traceback
 
 MY_DIR = Path(__file__).parent
 
@@ -28,11 +32,11 @@ class Bot(commands.Bot):
 
                 try:
                     if filename.endswith(".py"):
-                        cog = f"src.cogs.{filename[:-3]}"
+                        cog = f"zando.cogs.{filename[:-3]}"
                         await self.load_extension(cog)
                 except Exception as e:
                     print(f"Failed to load cog {filename}")
-                    print(e)
+                    traceback.print_exc()
 
 
 
@@ -48,7 +52,7 @@ client.remove_command('help')
 async def reload(ctx, cog_name):
     """Reloads a cog"""
     try:
-        await client.reload_extension(f"src.cogs.{cog_name}")
+        await client.reload_extension(f"zando.cogs.{cog_name}")
         await ctx.send(f"Reloaded cog: {cog_name}")
     except Exception as e:
         await ctx.send(f"Error: {e}")

@@ -1,0 +1,27 @@
+// database
+datasource db {
+  provider = "sqlite"
+  url      = "file:./database.db"
+}
+
+// generator
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
+
+// data models
+model Application {
+  id String @id @default(uuid())
+  roleid Int
+  userid Int
+  application String @unique
+  questions Question[]
+}
+
+model Question {
+  id String @id @default(uuid())
+  question String
+  application Application @relation(fields: [applicationId], references: [id])
+  applicationId String
+}

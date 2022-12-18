@@ -1,5 +1,5 @@
 from zando import *
-from zando.utils import UtilMethods, UTILS_DIR
+from zando.utils import UtilMethods, UTILS_DIR, InvalidTable
 
 
 class Events(commands.Cog):
@@ -31,6 +31,9 @@ class Events(commands.Cog):
 
         if isinstance(error, commands.DisabledCommand):
             await ctx.send(f'{ctx.command} has been disabled.')
+
+        elif isinstance(error, InvalidTable):
+            await ctx.send("Please provide a valid table")
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:

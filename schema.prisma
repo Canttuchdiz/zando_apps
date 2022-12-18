@@ -16,6 +16,7 @@ model Application {
   roleid Int
   userid Int
   application String @unique
+  guildId Int
   questions Question[]
 }
 

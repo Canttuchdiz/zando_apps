@@ -1,0 +1,3 @@
+
+class InvalidTable(Exception):
+    pass

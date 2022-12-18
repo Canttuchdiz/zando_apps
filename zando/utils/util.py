@@ -23,5 +23,5 @@ class UtilMethods:
 
 class TableTypes:
 
-    options: list = ['question', "application"]
+    options: list = ['application', 'question']
 

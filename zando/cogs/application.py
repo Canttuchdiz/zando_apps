@@ -8,6 +8,7 @@ from zando.utils import UserMethods, PrismaExt, TableTypes, InvalidTable
 import traceback
 from typing import Optional
 from discord.ui import View
+import copy
 
 
 class Application(commands.Cog):
@@ -26,7 +27,7 @@ class Application(commands.Cog):
         self.prisma = PrismaExt()
         await self.prisma.connect()
 
-    async def embedify(self, message : str):
+    async def embedify(self, message : str) -> discord.Embed:
         try:
             emb = discord.Embed(color=discord.Color.green())
             emb.add_field(name="Success", value=message)
@@ -53,7 +54,7 @@ class Application(commands.Cog):
 
                 }
             )
-            emb = self.embedify("Application successfully appended!")
+            emb = await self.embedify("Application successfully appended!")
             await interaction.response.send_message(embed=emb)
 
         except Exception as e:
@@ -67,7 +68,7 @@ class Application(commands.Cog):
 
 
     @app_commands.command(name="set")
-    async def set(self, interaction: discord.Interaction, app_name: str, *, question1 : str, question2 : str, question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
+    async def set(self, interaction: discord.Interaction, app_name: str, *, question_first : str, question_last : str, question2 : Optional[str], question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
         try:
 
             namespace = interaction.namespace
@@ -85,7 +86,7 @@ class Application(commands.Cog):
 
                     }
                 )
-            emb = self.embedify(f"Questions successfully appended into {app_name}")
+            emb = await self.embedify(f"Questions successfully appended into {app_name}")
             await interaction.response.send_message(embed=emb)
 
         except AttributeError as e:
@@ -101,11 +102,10 @@ class Application(commands.Cog):
         except Exception as e:
             traceback.print_exc()
 
-    @group.command(name="questions")
+    @group.command(name="questions", description="Used for listing all questions of an application relative to guild")
     async def questions(self, interaction : discord.Interaction, app_name : str):
+
         try:
-
-
 
             items = await self.prisma.relate(app_name, *TableTypes.options)
 
@@ -122,7 +122,7 @@ class Application(commands.Cog):
         except Exception as e:
             raise InvalidTable() from None
 
-    @group.command(name="applications")
+    @group.command(name="applications", description="Used for listing all applications of specific guild")
     async def applications(self, interaction : discord.Interaction):
 
         try:
@@ -158,7 +158,7 @@ class Apps(View):
             id = await self.prisma.where_first('application', 'application', self.app_name)
             questions = await self.prisma.where_many('question', 'applicationId', id.id)
 
-            answers = await UserMethods.user_response(self.client, interaction.user, [question.question for question in questions])
+            answers = await UserMethods.user_response(self.client, interaction.user, [question.question for question in copy.copy(questions)])
             print(answers)
 
         except Exception as e:

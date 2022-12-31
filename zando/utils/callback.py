@@ -21,30 +21,38 @@ class UserMethods:
         :return:
         """
 
+
         # Initializes some variables
-        length = len(questions) - 1
+        questions.append("Do you want to submit? To submit write **submit** or **cancel** to cancel")
         answers = []
+        questF = [quest for quest in questions if "last" in quest][0]
 
         # Gets messages for application
-        for i in range(length):
+        for i, question in enumerate(questions):
 
+            # Creates new embed for each question in db
             em = discord.Embed(color=discord.Color.red())
-            em.add_field(name=f"Question {i + 1}", value=questions[i])
+            em.add_field(name=f"Question {i + 1}", value=question)
             em.set_footer(text="Type cancel to cancel application.")
             await user.send(embed=em)
 
+            # Waits for user response
             msg = await client.wait_for('message',
                                              check=lambda m: m.author == user and m.channel == user.dm_channel)
+            # Checks if cancel is a response
             answers.append(msg.content.lower())
-            if "cancel" in answers:
+            if "cancel" in [answer.lower() for answer in answers]:
                 await user.send("Application successfully closed!")
                 return
 
-        fem = discord.Embed(color=discord.Color.green())
-        fem.add_field(name="Congratulations!", value=questions[length])
 
-        lowered_response = answers[len(answers) - 1]
-        if lowered_response != "submit":
+        fem = discord.Embed(color=discord.Color.green())
+
+        # Writes final response congradulating using question_last
+        fem.add_field(name="Congratulations!", value=questF)
+
+        final_response = answers[len(answers) - 1].lower()
+        if final_response != "submit":
             await user.send("Closed! C ya :wave:")
             return
         await user.send(embed=fem)

@@ -14,6 +14,7 @@ import copy
 class Application(commands.Cog):
 
     group = app_commands.Group(name="list", description="Groups together list commands")
+    set_group = app_commands.Group(name="set", description="Sets characteristics for applications")
 
     def __init__(self, bot) -> None:
         self.client = bot
@@ -58,7 +59,7 @@ class Application(commands.Cog):
             await interaction.response.send_message(embed=emb)
 
         except Exception as e:
-            # await ctx.send("You provided invalid or incomplete arguments")
+            await interaction.response.send_message(f"There exists am application with the name {app_name}")
             traceback.print_exc()
 
 
@@ -67,16 +68,28 @@ class Application(commands.Cog):
         pass
 
 
-    @app_commands.command(name="set")
-    async def set(self, interaction: discord.Interaction, app_name: str, *, question_first : str, question_last : str, question2 : Optional[str], question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
+    @set_group.command(name="questions", description="Sets main questions for application")
+    async def set_questions(self, interaction: discord.Interaction, app_name: str, *, question_first : str, question2 : Optional[str], question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
         try:
 
             namespace = interaction.namespace
             questions = [getattr(namespace, v) for v in dir(namespace) if v.startswith("question")]
 
-            id = await self.prisma.where_first('application', 'application', app_name)
+            table = TableTypes.options[0]
+            #
+            # id = await self.prisma.where_first(table, table, app_name)
 
-            # questions = questions_list.strip('][').split(', ')
+            id = await self.prisma.application.find_first(
+
+                where={
+                    table : app_name,
+                    "guildId" : interaction.guild_id
+                },
+
+            )
+
+
+
 
             for question in questions:
                 table = await self.prisma.question.create(
@@ -91,6 +104,10 @@ class Application(commands.Cog):
 
         except AttributeError as e:
             raise InvalidTable() from None
+
+    @set_group.command(name="last", description="Sets last question for an application")
+    async def set_last(self, interaction : discord.Interaction):
+        pass
 
     @app_commands.command(name="run")
     async def run(self, interaction: discord.Interaction, app_name: str):
@@ -107,7 +124,7 @@ class Application(commands.Cog):
 
         try:
 
-            items = await self.prisma.relate(app_name, *TableTypes.options)
+            items = await self.prisma.relate(app_name, *TableTypes.options, interaction.guild_id)
 
             element = TableTypes.options[1]
 
@@ -120,7 +137,8 @@ class Application(commands.Cog):
             await interaction.response.send_message(embed=emb)
 
         except Exception as e:
-            raise InvalidTable() from None
+            traceback.print_exc()
+            # raise InvalidTable() from None
 
     @group.command(name="applications", description="Used for listing all applications of specific guild")
     async def applications(self, interaction : discord.Interaction):
@@ -128,7 +146,7 @@ class Application(commands.Cog):
         try:
             element = TableTypes.options[0]
 
-            items = await self.prisma.db_data(element)
+            items = await self.prisma.where_many(element, "guildId", interaction.guild_id)
 
             emb = discord.Embed(color=discord.Color.blue(), title=f"{element.capitalize()} List")
 

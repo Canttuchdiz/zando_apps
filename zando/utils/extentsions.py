@@ -27,11 +27,24 @@ class PrismaExt(prisma.Prisma):
         except Exception as e:
             traceback.print_exc()
 
-    async def relate(self, app_name : str, table1 : str, table2 : str):
+    async def relate(self, app_name : str, table1 : str, table2 : str, guild_Id : int):
 
         try:
 
-            id = await self.where_first(table1, table1, app_name)
+            # id = await self.where_first(table1, table1, app_name)
+
+            table_obj = getattr(self, table1)
+
+            id = await table_obj.find_first(
+
+                where={
+                    table1: app_name,
+                    "guildId": guild_Id
+                },
+
+            )
+
+
 
             result = await self.where_many(table2, 'applicationId', id.id)
 
@@ -68,7 +81,7 @@ class PrismaExt(prisma.Prisma):
 
             table_obj = getattr(self, table)
 
-
+            print(table_obj, column, item)
             data = await table_obj.find_many(
 
                 where={

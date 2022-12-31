@@ -15,9 +15,11 @@ model Application {
   id String @id @default(uuid())
   roleid Int
   userid Int
-  application String @unique
+  application String
   guildId Int
   questions Question[]
+
+  @@unique([application, guildId])
 }
 
 model Question {

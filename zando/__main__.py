@@ -5,6 +5,9 @@ import discord
 from discord.ext import commands
 import os
 import traceback
+from zando.utils import InvalidChannel
+import sys
+from contextlib import suppress
 
 MY_DIR = Path(__file__).parent
 
@@ -25,8 +28,17 @@ class Bot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='!', intents=intents)
 
+    # def exception_handler(exctype, value, traceback):
+    #     except AttributeError:
+    #         raise InvalidTable
+    #
+    #     sys.__excepthook__(exctype, value, traceback)
+
+
     # Loading all cogs
     async def setup_hook(self):
+
+        # sys.excepthook = self.exception_handler
         for filename in os.listdir(MY_DIR / "cogs"):
             if os.path.isfile(os.path.join(MY_DIR / "cogs", filename)):
 

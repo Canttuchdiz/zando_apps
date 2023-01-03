@@ -3,7 +3,7 @@ import json
 import prisma
 import traceback
 import enum
-
+from zando.utils import TableTypes
 
 class PrismaExt(prisma.Prisma):
 
@@ -26,6 +26,25 @@ class PrismaExt(prisma.Prisma):
 
         except Exception as e:
             traceback.print_exc()
+
+    async def swap(self, app_name : str, order1, order2, id1, id2):
+
+        """
+        Swaps id on question table
+        """
+
+
+
+        # Heavily inspired by godlygeek
+
+        # reference_table = TableTypes.options[0]
+        #
+        # id = await self.where_first(reference_table, reference_table, app_name)
+
+        await self.question.query_raw("UPDATE question SET id = ? where id = ?", (order2, id1))
+
+        await self.question.query_raw("UPDATE question SET id = ? where id = ?", (order1, id2))
+
 
     async def relate(self, app_name : str, table1 : str, table2 : str, guild_Id : int):
 

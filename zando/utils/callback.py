@@ -25,7 +25,7 @@ class UserMethods:
         # Initializes some variables
         questions.append("Do you want to submit? To submit write **submit** or **cancel** to cancel")
         answers = []
-        questF = [quest for quest in questions if "last" in quest][0]
+        # questF = [quest for quest in questions if "last" in quest][0]
 
         # Gets messages for application
         for i, question in enumerate(questions):
@@ -40,20 +40,19 @@ class UserMethods:
             msg = await client.wait_for('message',
                                              check=lambda m: m.author == user and m.channel == user.dm_channel)
             # Checks if cancel is a response
-            answers.append(msg.content.lower())
-            if "cancel" in [answer.lower() for answer in answers]:
+            answers.append(msg.content)
+            if "cancel" == [answer.lower() for answer in answers]:
                 await user.send("Application successfully closed!")
                 return
 
 
-        fem = discord.Embed(color=discord.Color.green())
+        fem = discord.Embed(title="Application successfully submitted!", color=discord.Color.green())
 
-        # Writes final response congradulating using question_last
-        fem.add_field(name="Congratulations!", value=questF)
+        # Writes final response congratulating using question_last
 
         final_response = answers[len(answers) - 1].lower()
         if final_response != "submit":
             await user.send("Closed! C ya :wave:")
             return
         await user.send(embed=fem)
-        return answers
+        return answers[:-1]

@@ -1,6 +1,7 @@
 from zando import *
 from typing import *
 from discord.ext.commands import *
+from zando.utils import InvalidChannel
 
 class Commands(commands.Cog):
 
@@ -22,6 +23,10 @@ class Commands(commands.Cog):
     async def close(self, ctx):
         await ctx.send("Shutting down... :wave: bye!")
         await self.client.close()
+
+    # def exception_handler(exctype, value, traceback):
+    #     if exctype == InvalidTable:
+    #         pass
 
     @commands.command()
     @commands.guild_only()

@@ -1,3 +1,5 @@
+import sys
 
-class InvalidTable(Exception):
+class InvalidChannel(Exception):
     pass
+

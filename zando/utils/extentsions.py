@@ -100,7 +100,6 @@ class PrismaExt(prisma.Prisma):
 
             table_obj = getattr(self, table)
 
-            print(table_obj, column, item)
             data = await table_obj.find_many(
 
                 where={

@@ -18,7 +18,7 @@ class Events(commands.Cog):
         print('Ready!')
         print('Logged in as ---->', self.client.user)
         print('ID:', self.client.user.id)
-        await self.client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Cube Incorporation"), status=discord.Status.do_not_disturb)
+        await self.client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Zando Apps"), status=discord.Status.do_not_disturb)
 
     #Excepts errors, handles them accordingly, and sends new exceptions to stderr for the interpreter to print out.
     @commands.Cog.listener()

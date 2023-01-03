@@ -69,9 +69,9 @@ class Application(commands.Cog):
                 await interaction.response.send_message(embed=emb)
 
 
-    @commands.command(name="delete")
-    async def delete(self, ctx, table: str):
-        pass
+    # @app_commands.command(name="delete", description="Deletes specific question as indicated by input given")
+    # async def delete(self, ctx, table: str):
+    #     pass
 
 
     @set_group.command(name="questions", description="Sets main questions for application")
@@ -200,7 +200,7 @@ class Apps(View):
     @discord.ui.button(label="Application", style=discord.ButtonStyle.red)
     async def button(self, interaction : discord.Interaction, button : discord.ui.Button):
         try:
-            await interaction.response.send_message("Application want sent in your direct messages", ephemeral=True)
+            await interaction.response.send_message("Application was sent in your direct messages", ephemeral=True)
             id = await self.prisma.application.find_first(
                 where={
                     'application' : self.app_name,
@@ -212,8 +212,12 @@ class Apps(View):
 
             answers = await UserMethods.user_response(self.client, interaction.user, [question.question for question in copy.copy(questions)])
 
+            em = discord.Embed(color=discord.Color.blue(), title=self.app_name, description=f"User {interaction.user} ({interaction.user.id})")
 
-            await self.channel.send(answers)
+            for i in range(len(answers)):
+                em.add_field(name=f"Question {i}", value=answers[i])
+
+            await self.channel.send(embed=em)
 
         except Exception as e:
             if not isinstance(e, AttributeError):

@@ -5,7 +5,7 @@ import pathlib
 import asyncio
 from prisma import Prisma
 from prisma.errors import UniqueViolationError
-from zando.utils import UserMethods, PrismaExt, TableTypes, InvalidChannel
+from zando.utils import UserMethods, PrismaExt, TableTypes, InvalidChannel, InvalidApp
 import traceback
 from typing import Optional
 from discord.ui import View
@@ -123,9 +123,18 @@ class Application(commands.Cog):
         try:
 
             channel = self.client.get_channel(int(answer_channel_id))
+            app = await self.prisma.application.find_first(
+                where={
+                    "application" : app_name,
+                    "guildId" : interaction.guild_id
+                }
+            )
 
-            if isinstance(channel, self.NoneType):
+            if isinstance(app, self.NoneType):
+                raise InvalidApp
+            elif isinstance(channel, self.NoneType):
                 raise InvalidChannel
+
 
             view = Apps(self.client, app_name, self.prisma, channel)
             await interaction.response.send_message(view=view)
@@ -137,6 +146,9 @@ class Application(commands.Cog):
                 await interaction.response.send_message(embed=emb)
             elif isinstance(e, InvalidChannel):
                 emb = await self.embedify("Error", "Please input a valid channel id", discord.Color.red())
+                await interaction.response.send_message(embed=emb)
+            elif isinstance(e, InvalidApp):
+                emb = await self.embedify("Error", "Please input a valid channel app", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             else:
                 traceback.print_exc()
@@ -212,12 +224,14 @@ class Apps(View):
 
             answers = await UserMethods.user_response(self.client, interaction.user, [question.question for question in copy.copy(questions)])
 
-            em = discord.Embed(color=discord.Color.blue(), title=self.app_name, description=f"User {interaction.user} ({interaction.user.id})")
+            if answers is not None:
+                print("ran")
+                em = discord.Embed(color=discord.Color.blue(), title=self.app_name, description=f"User {interaction.user} ({interaction.user.id})")
 
-            for i in range(len(answers)):
-                em.add_field(name=f"Question {i}", value=answers[i])
+                for i in range(len(answers)):
+                    em.add_field(name=f"Question {i}", value=answers[i])
 
-            await self.channel.send(embed=em)
+                await self.channel.send(embed=em)
 
         except Exception as e:
             if not isinstance(e, AttributeError):

@@ -41,9 +41,12 @@ class UserMethods:
                                              check=lambda m: m.author == user and m.channel == user.dm_channel)
             # Checks if cancel is a response
             answers.append(msg.content)
-            if "cancel" == [answer.lower() for answer in answers]:
-                await user.send("Application successfully closed!")
-                return
+
+            for answer in answers:
+                if answer.lower() == "cancel":
+                    await user.send("Application successfully closed!")
+                    return
+
 
 
         fem = discord.Embed(title="Application successfully submitted!", color=discord.Color.green())

@@ -13,10 +13,10 @@ generator client {
 // data models
 model Application {
   id String @id @default(uuid())
-  roleid Int
-  userid Int
+  roleid BigInt
+  userid BigInt
   application String
-  guildId Int
+  guildId BigInt
   questions Question[]
 
   @@unique([application, guildId])

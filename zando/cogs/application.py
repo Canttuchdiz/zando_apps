@@ -136,7 +136,7 @@ class Application(commands.Cog):
                 raise InvalidChannel
 
 
-            view = Apps(self.client, app_name, self.prisma, channel)
+            view = Apps(self.client, app_name, self.prisma, channel, self)
             await interaction.response.send_message(view=view)
 
         except Exception as e:
@@ -201,12 +201,13 @@ class Application(commands.Cog):
 
 class Apps(View):
 
-    def __init__(self, instance, app_name, prisma, channel):
+    def __init__(self, instance, app_name, prisma, channel, cog):
         super().__init__(timeout=None)
         self.client = instance
         self.app_name = app_name
         self.prisma = prisma
         self.channel : discord.channel.TextChannel = channel
+        self.instance = cog
 
 
     @discord.ui.button(label="Application", style=discord.ButtonStyle.red)
@@ -225,7 +226,7 @@ class Apps(View):
             answers = await UserMethods.user_response(self.client, interaction.user, [question.question for question in copy.copy(questions)])
 
             if answers is not None:
-                print("ran")
+
                 em = discord.Embed(color=discord.Color.blue(), title=self.app_name, description=f"User {interaction.user} ({interaction.user.id})")
 
                 for i in range(len(answers)):
@@ -237,7 +238,7 @@ class Apps(View):
             if not isinstance(e, AttributeError):
                 traceback.print_exc()
             else:
-                emb = await self.embedify("Error", "Please input a valid channel id", discord.Color.red())
+                emb = await self.instance.embedify("Error", "Please input a valid channel id", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
 
 

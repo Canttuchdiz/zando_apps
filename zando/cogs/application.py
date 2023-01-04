@@ -43,14 +43,14 @@ class Application(commands.Cog):
     #     # Pass in list of questions
     #     self.receiver.user_response(interaction.author, )
 
-    @app_commands.command(name="create", description="Creates a new application with specified optional requirements")
-    async def create(self, interaction: discord.Interaction, app_name: str, role: str) -> None:
+    @app_commands.command(name="create", description="Creates a new application with the id of the lowest role allowed to start the application")
+    async def create(self, interaction: discord.Interaction, app_name: str, role_id: str) -> None:
 
         try:
 
             table = await self.prisma.application.create(
                 data={
-                    'roleid': int(role),
+                    'roleid': int(role_id),
                     'userid': interaction.user.id,
                     'application': app_name,
                     'guildId': interaction.guild_id
@@ -72,6 +72,20 @@ class Application(commands.Cog):
     # @app_commands.command(name="delete", description="Deletes specific question as indicated by input given")
     # async def delete(self, ctx, table: str):
     #     pass
+    #
+
+    # @set_group.command(name="config", description="Is used to configure some aspects of the bot")
+    # async def configuration(self, interaction : discord.Interaction, editorId : int):
+    #     try:
+    #         table = await self.prisma.config.create(
+    #             data={
+    #                 "role_id" : editorId,
+    #                 "guildId" : interaction.guild_id
+    #             }
+    #         )
+    #
+    #     except Exception as e:
+    #         traceback.print_exc()
 
 
     @set_group.command(name="questions", description="Sets main questions for application")
@@ -145,10 +159,10 @@ class Application(commands.Cog):
                 emb = await self.embedify("Error", "Please input a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             elif isinstance(e, InvalidChannel):
-                emb = await self.embedify("Error", "Please input a valid channel id", discord.Color.red())
+                emb = await self.embedify("Error", "Please provide a valid channel id", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             elif isinstance(e, InvalidApp):
-                emb = await self.embedify("Error", "Please input a valid channel app", discord.Color.red())
+                emb = await self.embedify("Error", "Please provide a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             else:
                 traceback.print_exc()
@@ -230,7 +244,7 @@ class Apps(View):
                 em = discord.Embed(color=discord.Color.blue(), title=self.app_name, description=f"User {interaction.user} ({interaction.user.id})")
 
                 for i in range(len(answers)):
-                    em.add_field(name=f"Question {i}", value=answers[i])
+                    em.add_field(name=f"Question {i + 1}", value=answers[i])
 
                 await self.channel.send(embed=em)
 

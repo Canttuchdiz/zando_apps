@@ -49,7 +49,7 @@ class Help(commands.Cog):
         separator = ', '
         # !SET THOSE VARIABLES TO MAKE THE COG FUNCTIONAL!
         prefix = '!'  # ENTER YOUR PREFIX - loaded from config, as string or how ever you want!
-        version = '0.3.4-alpha' # enter version of your code
+        version = '0.3.5-alpha' # enter version of your code
 
         # setting owner name - if you don't wanna be mentioned remove line 49-60 and adjust help text (line 88)
         owner =  520741459478052886# ENTER YOU DISCORD-ID

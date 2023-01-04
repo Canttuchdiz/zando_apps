@@ -28,3 +28,8 @@ model Question {
   application Application @relation(fields: [applicationId], references: [id])
   applicationId String
 }
+
+model Config {
+   role_id BigInt
+   guildId BigInt @unique
+}

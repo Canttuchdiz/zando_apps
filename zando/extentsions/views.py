@@ -30,7 +30,7 @@ class Apps(View):
     @discord.ui.button(label="Application", style=discord.ButtonStyle.red)
     async def button(self, interaction : discord.Interaction, button : discord.ui.Button):
         try:
-            await interaction.response.send_message("Application was sent in your direct messages", ephemeral=True)
+
             id = await self.prisma.application.find_first(
                 where={
                     'application' : self.app_name,
@@ -39,6 +39,8 @@ class Apps(View):
             )
 
             questions = await self.prisma.where_many('question', 'applicationId', id.id)
+
+            await interaction.response.send_message("Application was sent in your direct messages", ephemeral=True)
 
             answers = await UserMethods.user_response(self.client, interaction.user, [question.question for question in copy.copy(questions)])
 
@@ -54,8 +56,8 @@ class Apps(View):
                 await self.channel.send(embed=em)
 
         except Exception as e:
-            if not isinstance(e, AttributeError):
-                traceback.print_exc()
-            else:
+            if isinstance(e, AttributeError):
                 emb = await self.instance.embedify("Error", "Please input a valid channel id", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
+            else:
+                traceback.print_exc()

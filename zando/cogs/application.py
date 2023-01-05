@@ -59,26 +59,23 @@ class Application(commands.Cog):
                 }
             )
 
-            print(value)
 
-            if value.reapply:
-                check = await self.prisma.records.find_first(
-                    where={
-                        'userId': user_id,
-                        'application': app_name,
-                        'guildId': interaction.guild_id,
-                        'blacklist' : blacklist
-                    }
-                )
 
-                return bool(check)
+            if value:
+                if value.reapply:
+                    check = await self.prisma.records.find_first(
+                        where={
+                            'userId': user_id,
+                            'application': app_name,
+                            'guildId': interaction.guild_id,
+                            'blacklist' : blacklist
+                        }
+                    )
+
+            return bool(check)
 
         except Exception as e:
-
-            if isinstance(e, AttributeError):
-                pass
-            else:
-                traceback.print_exc()
+            traceback.print_exc()
 
     async def record_complete(self, interaction : discord.Interaction, app_name : str, user_id : int, blacklist : Optional[bool] = False):
 

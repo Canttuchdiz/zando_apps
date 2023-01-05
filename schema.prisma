@@ -35,6 +35,7 @@ model Records {
    userId BigInt
    application String
    guildId BigInt
+   blacklist Boolean @default(false)
 }
 
 model Config {

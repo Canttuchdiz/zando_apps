@@ -47,10 +47,11 @@ class Application(commands.Cog):
         except Exception as e:
             traceback.print_exc()
 
-    async def user_applied(self, interaction : discord.Interaction, app_name : str, user_id : int) -> bool:
+    async def can_apply(self, interaction : discord.Interaction, app_name : str, user_id : int, blacklist : bool) -> bool:
 
         try:
             check = False
+
             value = await self.prisma.application.find_first(
                 where={
                     'application': app_name,
@@ -63,7 +64,8 @@ class Application(commands.Cog):
                     where={
                         'userId': user_id,
                         'application': app_name,
-                        'guildId': interaction.guild_id
+                        'guildId': interaction.guild_id,
+                        'blacklist' : blacklist
                     }
                 )
 
@@ -72,14 +74,15 @@ class Application(commands.Cog):
         except Exception as e:
             traceback.print_exc()
 
-    async def record_complete(self, interaction : discord.Interaction, app_name : str, user_id : int):
+    async def record_complete(self, interaction : discord.Interaction, app_name : str, user_id : int, blacklist : Optional[bool] = False):
 
         try:
             table = await self.prisma.records.create(
                 data={
                     'userId': user_id,
                     'application': app_name,
-                    'guildId': interaction.guild_id
+                    'guildId': interaction.guild_id,
+                    'blacklist' : blacklist
                 }
             )
             return table
@@ -153,14 +156,14 @@ class Application(commands.Cog):
             if not app:
                 raise InvalidApp
 
-            did_apply = await self.user_applied(interaction, app_name, int(user_id))
+            blacklisted = await self.can_apply(interaction, app_name, int(user_id), True)
             user : discord.Member = self.client.get_user(int(user_id))
 
-            if did_apply:
+            if blacklisted:
                 await interaction.response.send_message(f"{user.name} has already applied or is blacklisted.", ephemeral=True)
                 return
 
-            table = await self.record_complete(interaction, app_name, int(user_id))
+            table = await self.record_complete(interaction, app_name, int(user_id), True)
 
             await interaction.response.send_message(f"{user.name} has been blacklisted from {app_name}", ephemeral=True)
 
@@ -175,7 +178,7 @@ class Application(commands.Cog):
             else:
                 traceback.print_exc()
 
-    @app_commands.command(name="allow_apply", description="Allows user to apply after they have applied or have been blacklisted")
+    @blacklist_group.command(name="remove", description="Allows user to apply after they have applied or have been blacklisted")
     async def remove(self, interaction : discord.Interaction, app_name : str, user_id : str):
         try:
 
@@ -184,25 +187,28 @@ class Application(commands.Cog):
             if not app:
                 raise InvalidApp
 
-            did_apply : bool = await self.user_applied(interaction, app_name, int(user_id))
+            blacklisted : bool = await self.can_apply(interaction, app_name, int(user_id), True)
 
             user: discord.Member = self.client.get_user(int(user_id))
 
-            if did_apply:
+            print(blacklisted)
+
+            if blacklisted:
 
 
                 await self.prisma.records.delete_many(
                     where={
                         'userId' : user_id,
                         'application' : app_name,
-                        'guildId' : interaction.guild_id
+                        'guildId' : interaction.guild_id,
+                        'blacklist' : True
                     }
                 )
 
                 await interaction.response.send_message(f"{user.name} successfully unblacklisted", ephemeral=True)
                 return
 
-            await interaction.response.send_message(f"{user.name} has not applied or been blacklisted", ephemeral=True)
+            await interaction.response.send_message(f"{user.name} has not been blacklisted", ephemeral=True)
 
         except Exception as e:
 
@@ -215,8 +221,8 @@ class Application(commands.Cog):
             else:
                 traceback.print_exc()
 
-    @group.command(name="cannot_apply", description="Lists members who can't reapply; whether by blacklist or already applied")
-    async def no_apply(self, interaction : discord.Interaction, app_name : str):
+    @group.command(name="blacklisted", description="Lists members who can't reapply; whether by blacklist or already applied")
+    async def blacklist_List(self, interaction : discord.Interaction, app_name : str):
 
         try:
 
@@ -228,7 +234,9 @@ class Application(commands.Cog):
             records = await self.prisma.records.find_many(
                 where={
                     'application' : app_name,
-                    'guildId' : interaction.guild_id
+                    'guildId' : interaction.guild_id,
+                    'blacklist' : True
+
                 }
             )
 
@@ -245,6 +253,9 @@ class Application(commands.Cog):
 
             if isinstance(e, InvalidApp):
                 emb = await self.embedify("Error", "Please provide a valid application", discord.Color.red())
+                await interaction.response.send_message(embed=emb)
+            elif isinstance(e, AttributeError):
+                emb = await self.embedify("Error", f"{e}", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             else:
                 traceback.print_exc()

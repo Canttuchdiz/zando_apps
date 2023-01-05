@@ -18,7 +18,7 @@ class Apps(View):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
 
-        did_apply = await self.instance.user_applied(interaction, self.app_name, interaction.user.id)
+        did_apply = await self.instance.can_apply(interaction, self.app_name, interaction.user.id, False)
 
         if did_apply:
 

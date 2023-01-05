@@ -16,6 +16,7 @@ model Application {
   roleid BigInt
   userid BigInt
   application String
+  reapply Boolean @default(false)
   guildId BigInt
   questions Question[]
 
@@ -29,7 +30,14 @@ model Question {
   applicationId String
 }
 
+model Records {
+   id Int @id @default(autoincrement())
+   userId BigInt
+   application String
+   guildId BigInt
+}
+
 model Config {
-   role_id BigInt
+   userId BigInt
    guildId BigInt @unique
 }

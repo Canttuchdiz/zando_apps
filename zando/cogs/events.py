@@ -1,5 +1,5 @@
 from zando import *
-from zando.utils import UtilMethods, UTILS_DIR, InvalidChannel
+from zando.utils import UtilMethods, UTILS_DIR, InvalidChannel, Config
 
 
 class Events(commands.Cog):
@@ -18,6 +18,7 @@ class Events(commands.Cog):
         print('Ready!')
         print('Logged in as ---->', self.client.user)
         print('ID:', self.client.user.id)
+        print(f'Version: {Config.VERSION}')
         await self.client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Zando Apps"), status=discord.Status.do_not_disturb)
 
     #Excepts errors, handles them accordingly, and sends new exceptions to stderr for the interpreter to print out.

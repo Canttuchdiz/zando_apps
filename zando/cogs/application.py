@@ -59,6 +59,8 @@ class Application(commands.Cog):
                 }
             )
 
+            print(value)
+
             if value.reapply:
                 check = await self.prisma.records.find_first(
                     where={
@@ -72,7 +74,11 @@ class Application(commands.Cog):
                 return bool(check)
 
         except Exception as e:
-            traceback.print_exc()
+
+            if isinstance(e, AttributeError):
+                pass
+            else:
+                traceback.print_exc()
 
     async def record_complete(self, interaction : discord.Interaction, app_name : str, user_id : int, blacklist : Optional[bool] = False):
 

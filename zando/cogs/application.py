@@ -59,16 +59,13 @@ class Application(commands.Cog):
                 }
             )
 
-
-
-            if value:
-                if value.reapply:
-                    check = await self.prisma.records.find_first(
-                        where={
-                            'userId': user_id,
-                            'application': app_name,
-                            'guildId': interaction.guild_id,
-                            'blacklist' : blacklist
+            if value.reapply:
+                check = await self.prisma.records.find_first(
+                    where={
+                        'userId': user_id,
+                        'application': app_name,
+                        'guildId': interaction.guild_id,
+                        'blacklist' : blacklist
                         }
                     )
 
@@ -315,7 +312,8 @@ class Application(commands.Cog):
             channel = self.client.get_channel(int(answer_channel_id))
             app = await self.valid_app(interaction, app_name)
 
-            if isinstance(app, self.NoneType):
+
+            if not app:
                 raise InvalidApp
             elif isinstance(channel, self.NoneType):
                 raise InvalidChannel

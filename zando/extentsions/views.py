@@ -56,8 +56,8 @@ class Apps(View):
                 await self.channel.send(embed=em)
 
         except Exception as e:
-            if isinstance(e, AttributeError):
-                emb = await self.instance.embedify("Error", "Please input a valid channel id", discord.Color.red())
-                await interaction.response.send_message(embed=emb)
-            else:
-                traceback.print_exc()
+            # if isinstance(e, AttributeError):
+            #     emb = await self.instance.embedify("Error", "Please input a valid channel id", discord.Color.red())
+            #     await interaction.response.send_message(embed=emb)
+            # else:
+            traceback.print_exc()

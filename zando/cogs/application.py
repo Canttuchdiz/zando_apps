@@ -8,7 +8,7 @@ from prisma.errors import UniqueViolationError
 from zando.utils import PrismaExt, TableTypes, InvalidChannel, InvalidApp, TypeConvert
 from zando.extentsions import UserMethods, Apps
 import traceback
-from typing import Optional, Literal
+from typing import Optional, Literal, Union, List
 from discord.ui import View
 import copy
 
@@ -18,6 +18,7 @@ class Application(commands.Cog):
     group = app_commands.Group(name="list", description="Groups together list commands")
     set_group = app_commands.Group(name="set", description="Sets characteristics for applications")
     blacklist_group = app_commands.Group(name="blacklist", description="Handles blacklisting sets and deletions")
+    app_group = app_commands.Group(name="application", description="The group contains app specific commands")
 
     def __init__(self, bot) -> None:
         self.client = bot
@@ -74,6 +75,17 @@ class Application(commands.Cog):
         except Exception as e:
             traceback.print_exc()
 
+    async def app_autocomplete(self, interaction: discord.Interaction, current: str,) -> list:
+
+        try:
+
+            items = await self.prisma.where_many("application", "guildId", interaction.guild_id)
+
+            return [app_commands.Choice(name=app.application, value=app.application) for app in items if current.lower() in app.application.lower()]
+
+        except Exception as e:
+            traceback.print_exc()
+
     async def record_complete(self, interaction : discord.Interaction, app_name : str, user_id : int, blacklist : Optional[bool] = False):
 
         try:
@@ -103,16 +115,16 @@ class Application(commands.Cog):
     #     self.receiver.user_response(interaction.author, )
 
     @app_commands.command(name="create", description="Creates a new application with the id of the lowest role allowed to start the application")
-    async def create(self, interaction: discord.Interaction, app_name: str, role_id: str, can_reapply : Literal['Yes', 'No']) -> None:
+    async def create(self, interaction: discord.Interaction, application: str, role: discord.Role, reapply : Literal['Yes', 'No']) -> None:
 
         try:
 
             table = await self.prisma.application.create(
                 data={
-                    'roleid': int(role_id),
+                    'roleid': int(role.id),
                     'userid': interaction.user.id,
-                    'application': app_name,
-                    'reapply' : bool(TypeConvert.a[can_reapply]),
+                    'application': application,
+                    'reapply': TypeConvert.a[reapply],
                     'guildId': interaction.guild_id
 
                 }
@@ -125,7 +137,7 @@ class Application(commands.Cog):
             if not isinstance(e, UniqueViolationError):
                 traceback.print_exc()
             else:
-                emb = await self.embedify("Error", f"There exists an application with the name {app_name}", discord.Color.red())
+                emb = await self.embedify("Error", f"There exists an application with the name {application}", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
 
 
@@ -148,24 +160,24 @@ class Application(commands.Cog):
     #         traceback.print_exc()
 
     @blacklist_group.command(name="add", description="Blacklists a user from taking an application")
-    async def blacklist(self, interaction : discord.Interaction, app_name : str, user_id : str):
+    @app_commands.autocomplete(application=app_autocomplete)
+    async def blacklist(self, interaction : discord.Interaction, application : str, user : Union[discord.Member, discord.User]):
         try:
 
-            app = await self.valid_app(interaction, app_name)
+            app = await self.valid_app(interaction, application)
 
             if not app:
                 raise InvalidApp
 
-            blacklisted = not await self.can_apply(interaction, app_name, int(user_id), True)
-            user : discord.Member = self.client.get_user(int(user_id))
+            blacklisted = not await self.can_apply(interaction, application, int(user.id), True)
 
             if blacklisted:
                 await interaction.response.send_message(f"{user.name} has already been blacklisted.", ephemeral=True)
                 return
 
-            table = await self.record_complete(interaction, app_name, int(user_id), True)
+            table = await self.record_complete(interaction, application, int(user.id), True)
 
-            await interaction.response.send_message(f"{user.name} has been blacklisted from {app_name}", ephemeral=True)
+            await interaction.response.send_message(f"{user.name} has been blacklisted from {application}", ephemeral=True)
 
         except Exception as e:
 
@@ -179,24 +191,23 @@ class Application(commands.Cog):
                 traceback.print_exc()
 
     @blacklist_group.command(name="remove", description="Allows user to apply after they have applied or have been blacklisted")
-    async def remove(self, interaction : discord.Interaction, app_name : str, user_id : str):
+    @app_commands.autocomplete(application=app_autocomplete)
+    async def remove(self, interaction : discord.Interaction, application : str, user : Union[discord.Member, discord.User]):
         try:
 
-            app = await self.valid_app(interaction, app_name)
+            app = await self.valid_app(interaction, application)
 
             if not app:
                 raise InvalidApp
 
-            blacklisted : bool = not await self.can_apply(interaction, app_name, int(user_id), True)
-
-            user: discord.Member = self.client.get_user(int(user_id))
+            blacklisted : bool = not await self.can_apply(interaction, application, int(user.id), True)
 
             if blacklisted:
 
                 await self.prisma.records.delete_many(
                     where={
-                        'userId' : user_id,
-                        'application' : app_name,
+                        'userId' : user.id,
+                        'application' : application,
                         'guildId' : interaction.guild_id,
                         'blacklist' : True
                     }
@@ -219,18 +230,19 @@ class Application(commands.Cog):
                 traceback.print_exc()
 
     @group.command(name="blacklisted", description="Lists members who can't reapply; whether by blacklist or already applied")
-    async def blacklist_List(self, interaction : discord.Interaction, app_name : str):
+    @app_commands.autocomplete(application=app_autocomplete)
+    async def blacklist_List(self, interaction : discord.Interaction, application : str):
 
         try:
 
-            app = await self.valid_app(interaction, app_name)
+            app = await self.valid_app(interaction, application)
 
             if not app:
                 raise InvalidApp
 
             records = await self.prisma.records.find_many(
                 where={
-                    'application' : app_name,
+                    'application' : application,
                     'guildId' : interaction.guild_id,
                     'blacklist' : True
 
@@ -259,7 +271,8 @@ class Application(commands.Cog):
 
 
     @set_group.command(name="questions", description="Sets main questions for application")
-    async def set_questions(self, interaction: discord.Interaction, app_name: str, *, question1 : str, question2 : Optional[str], question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
+    @app_commands.autocomplete(application=app_autocomplete)
+    async def set_questions(self, interaction: discord.Interaction, application: str, *, question1 : str, question2 : Optional[str], question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
         try:
 
             namespace = interaction.namespace
@@ -272,7 +285,7 @@ class Application(commands.Cog):
             id = await self.prisma.application.find_first(
 
                 where={
-                    table : app_name,
+                    table : application,
                     "guildId" : interaction.guild_id
                 },
 
@@ -286,7 +299,7 @@ class Application(commands.Cog):
 
                     }
                 )
-            emb = await self.embedify("Success", f"Questions successfully appended into {app_name}", discord.Color.green())
+            emb = await self.embedify("Success", f"Questions successfully appended into {application}", discord.Color.green())
             await interaction.response.send_message(embed=emb)
 
         except Exception as e:
@@ -302,21 +315,46 @@ class Application(commands.Cog):
     # async def set_last(self, interaction : discord.Interaction):
     #     pass
 
-    @app_commands.command(name="run", description="Runs application with specified application name and answer channel")
-    async def run(self, interaction: discord.Interaction, app_name: str, answer_channel_id : str):
+    @app_group.command(name="delete", description="Deletes specified application")
+    @app_commands.autocomplete(application=app_autocomplete)
+    async def delete_app(self, interaction : discord.Interaction, application : str):
         try:
 
-            channel = self.client.get_channel(int(answer_channel_id))
-            app = await self.valid_app(interaction, app_name)
+            app = await self.valid_app(interaction, application)
+
+            if not app:
+                raise InvalidApp
+
+            await self.prisma.application.delete_many(
+                where={
+                    'application': application,
+                    'guildId': interaction.guild_id
+                }
+            )
+
+        except Exception as e:
+
+            if isinstance(e, InvalidApp):
+                emb = await self.embedify("Error", "Please provide a valid application", discord.Color.red())
+                await interaction.response.send_message(embed=emb)
+            else:
+                traceback.print_exc()
+
+    @app_group.command(name="run", description="Runs application with specified application name and answer channel")
+    @app_commands.autocomplete(application=app_autocomplete)
+    async def run(self, interaction: discord.Interaction, application: str, answer_channel : Union[discord.Thread, discord.TextChannel]):
+        try:
+
+            app = await self.valid_app(interaction, application)
 
 
             if not app:
                 raise InvalidApp
-            elif isinstance(channel, self.NoneType):
-                raise InvalidChannel
+            # elif isinstance(channel, self.NoneType):
+            #     raise InvalidChannel
 
 
-            view = Apps(self.client, app_name, self.prisma, channel, self)
+            view = Apps(self.client, application, self.prisma, answer_channel, self)
             await interaction.response.send_message(view=view)
 
         except Exception as e:
@@ -334,11 +372,12 @@ class Application(commands.Cog):
                 traceback.print_exc()
 
     @group.command(name="questions", description="Used for listing all questions of an application relative to guild")
-    async def questions(self, interaction : discord.Interaction, app_name : str):
+    @app_commands.autocomplete(application=app_autocomplete)
+    async def questions(self, interaction : discord.Interaction, application : str):
 
         try:
 
-            items = await self.prisma.relate(app_name, *TableTypes.options, interaction.guild_id)
+            items = await self.prisma.relate(application, *TableTypes.options, interaction.guild_id)
 
             element = TableTypes.options[1]
 

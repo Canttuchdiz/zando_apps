@@ -18,13 +18,15 @@ class Apps(View):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
 
-        did_apply = await self.instance.can_apply(interaction, self.app_name, interaction.user.id, False)
+        can_apply = await self.instance.can_apply(interaction, self.app_name, interaction.user.id, False)
+        blacklisted = not await self.instance.can_apply(interaction, self.app_name, interaction.user.id, True)
 
-        if did_apply:
+        if not can_apply or blacklisted:
 
             await interaction.response.send_message("You have already applied or are blacklisted.", ephemeral=True)
+            return False
 
-        return not did_apply
+        return can_apply
 
 
     @discord.ui.button(label="Application", style=discord.ButtonStyle.red)
@@ -56,8 +58,4 @@ class Apps(View):
                 await self.channel.send(embed=em)
 
         except Exception as e:
-            # if isinstance(e, AttributeError):
-            #     emb = await self.instance.embedify("Error", "Please input a valid channel id", discord.Color.red())
-            #     await interaction.response.send_message(embed=emb)
-            # else:
             traceback.print_exc()

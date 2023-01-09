@@ -5,10 +5,10 @@ import pathlib
 import asyncio
 from prisma import Prisma
 from prisma.errors import UniqueViolationError
-from zando.utils import PrismaExt, TableTypes, InvalidChannel, InvalidApp
+from zando.utils import PrismaExt, TableTypes, InvalidChannel, InvalidApp, TypeConvert
 from zando.extentsions import UserMethods, Apps
 import traceback
-from typing import Optional
+from typing import Optional, Literal
 from discord.ui import View
 import copy
 
@@ -59,7 +59,7 @@ class Application(commands.Cog):
                 }
             )
 
-            if value.reapply:
+            if not value.reapply or blacklist:
                 check = await self.prisma.records.find_first(
                     where={
                         'userId': user_id,
@@ -69,7 +69,7 @@ class Application(commands.Cog):
                         }
                     )
 
-            return bool(check)
+            return not bool(check)
 
         except Exception as e:
             traceback.print_exc()
@@ -103,7 +103,7 @@ class Application(commands.Cog):
     #     self.receiver.user_response(interaction.author, )
 
     @app_commands.command(name="create", description="Creates a new application with the id of the lowest role allowed to start the application")
-    async def create(self, interaction: discord.Interaction, app_name: str, role_id: str, can_reapply : bool) -> None:
+    async def create(self, interaction: discord.Interaction, app_name: str, role_id: str, can_reapply : Literal['Yes', 'No']) -> None:
 
         try:
 
@@ -112,7 +112,7 @@ class Application(commands.Cog):
                     'roleid': int(role_id),
                     'userid': interaction.user.id,
                     'application': app_name,
-                    'reapply' : can_reapply,
+                    'reapply' : bool(TypeConvert.a[can_reapply]),
                     'guildId': interaction.guild_id
 
                 }
@@ -156,11 +156,11 @@ class Application(commands.Cog):
             if not app:
                 raise InvalidApp
 
-            blacklisted = await self.can_apply(interaction, app_name, int(user_id), True)
+            blacklisted = not await self.can_apply(interaction, app_name, int(user_id), True)
             user : discord.Member = self.client.get_user(int(user_id))
 
             if blacklisted:
-                await interaction.response.send_message(f"{user.name} has already applied or is blacklisted.", ephemeral=True)
+                await interaction.response.send_message(f"{user.name} has already been blacklisted.", ephemeral=True)
                 return
 
             table = await self.record_complete(interaction, app_name, int(user_id), True)
@@ -187,14 +187,11 @@ class Application(commands.Cog):
             if not app:
                 raise InvalidApp
 
-            blacklisted : bool = await self.can_apply(interaction, app_name, int(user_id), True)
+            blacklisted : bool = not await self.can_apply(interaction, app_name, int(user_id), True)
 
             user: discord.Member = self.client.get_user(int(user_id))
 
-            print(blacklisted)
-
             if blacklisted:
-
 
                 await self.prisma.records.delete_many(
                     where={

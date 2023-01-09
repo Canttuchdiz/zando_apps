@@ -3,6 +3,7 @@ import json
 import prisma
 import traceback
 import enum
+from typing import Literal
 
 class UtilMethods:
 
@@ -24,4 +25,8 @@ class UtilMethods:
 class TableTypes:
 
     options: list = ['application', 'question']
+
+class TypeConvert:
+
+    a = {"Yes" : True, "No" : False}
 

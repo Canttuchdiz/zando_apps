@@ -5,12 +5,13 @@ import pathlib
 import asyncio
 from prisma import Prisma
 from prisma.errors import UniqueViolationError
-from zando.utils import PrismaExt, TableTypes, InvalidChannel, InvalidApp, TypeConvert
-from zando.extentsions import UserMethods, Apps
+from zando.utils import PrismaExt, TableTypes, InvalidChannel, InvalidApp, TypeConvert, InvalidEmbed
+from zando.extentsions import UserMethods, Apps, Create, QuestionEdit, AppEmbed
 import traceback
 from typing import Optional, Literal, Union, List
 from discord.ui import View
 import copy
+import json
 
 
 class Application(commands.Cog):
@@ -26,6 +27,7 @@ class Application(commands.Cog):
         self.loop = asyncio.get_event_loop()
         self.loop.create_task(self.connect_client())
         self.NoneType : type = type(None)
+        self.applying = []
 
         # self.receiver = UserReceiver(self.client, self.data)
 
@@ -47,6 +49,17 @@ class Application(commands.Cog):
 
         except Exception as e:
             traceback.print_exc()
+
+    # def valid_dec(func):
+    #
+    #     async def inner(*args, **kwargs):
+    #
+    #         print("ran")
+    #         await func(*args, **kwargs)
+    #
+    #
+    #     return inner
+
 
     async def can_apply(self, interaction : discord.Interaction, app_name : str, user_id : int, blacklist : bool) -> bool:
 
@@ -101,13 +114,12 @@ class Application(commands.Cog):
         except Exception as e:
             traceback.print_exc()
 
-    async def embedify(self, title : str, message : str, color : discord.Color) -> discord.Embed:
-        try:
-            emb = discord.Embed(color=color)
-            emb.add_field(name=title, value=message)
-            return emb
-        except Exception as e:
-            traceback.print_exc()
+    @staticmethod
+    def embedify(title : str, message : str, color : discord.Color) -> discord.Embed:
+        emb = discord.Embed(color=color)
+        emb.add_field(name=title, value=message)
+        return emb
+
 
     # @commands.command(name="start")
     # async def start(self, interaction, app_name : str) -> None:
@@ -115,29 +127,36 @@ class Application(commands.Cog):
     #     self.receiver.user_response(interaction.author, )
 
     @app_commands.command(name="create", description="Creates a new application with the id of the lowest role allowed to start the application")
-    async def create(self, interaction: discord.Interaction, application: str, role: discord.Role, reapply : Literal['Yes', 'No']) -> None:
+    async def create(self, interaction: discord.Interaction, name: str, role: discord.Role, reapply : Literal['Yes', 'No']) -> None:
 
         try:
 
-            table = await self.prisma.application.create(
-                data={
-                    'roleid': int(role.id),
-                    'userid': interaction.user.id,
-                    'application': application,
-                    'reapply': TypeConvert.a[reapply],
-                    'guildId': interaction.guild_id
+            emb = discord.Embed(title="Application Creation",
+                                  description="Here are some buttons that you may use to set an application. If you want to set a question, press the Add Question button.",
+                                  color=0x2ac659)
 
-                }
-            )
-            emb = await self.embedify("Success", "Application successfully appended!", discord.Color.green())
-            await interaction.response.send_message(embed=emb)
+            view = Create(self.client, self, name, self.prisma, role, reapply)
+
+            await interaction.response.send_message(embed=emb, view=view, ephemeral=True)
+
+            # table = await self.prisma.application.create(
+            #     data={
+            #         'roleid': int(role.id),
+            #         'userid': interaction.user.id,
+            #         'application': application,
+            #         'reapply': TypeConvert.a[reapply],
+            #         'guildId': interaction.guild_id
+            #
+            #     }
+            # )
+
 
         except Exception as e:
 
             if not isinstance(e, UniqueViolationError):
                 traceback.print_exc()
             else:
-                emb = await self.embedify("Error", f"There exists an application with the name {application}", discord.Color.red())
+                emb = self.embedify("Error", f"There exists an application with the name {name}", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
 
 
@@ -158,37 +177,53 @@ class Application(commands.Cog):
     #
     #     except Exception as e:
     #         traceback.print_exc()
+    @app_group.command(name="embed", description="Configures the embed that will be sent when the application is ran")
+    @app_commands.autocomplete(application=app_autocomplete)
+    async def embed_create(self, interaction : discord.Interaction, application : str):
+
+        app = await self.valid_app(interaction, application)
+
+        if not app:
+            raise InvalidApp
+
+        embed = await self.prisma.config.find_first(
+            where={
+                'application': application,
+                'guildId': interaction.guild_id
+            }
+        )
+
+        if embed:
+            raise InvalidEmbed(f"Embed already exists for {application}")
+
+        emb = discord.Embed(title=application, description="*Insert*", color=discord.Color.blue())
+
+        view = AppEmbed(self.client, self, self.prisma, application, emb)
+
+        await interaction.response.send_message(embed=emb, view=view, ephemeral=True)
+
+
+
 
     @blacklist_group.command(name="add", description="Blacklists a user from taking an application")
     @app_commands.autocomplete(application=app_autocomplete)
     async def blacklist(self, interaction : discord.Interaction, application : str, user : Union[discord.Member, discord.User]):
-        try:
 
-            app = await self.valid_app(interaction, application)
+        app = await self.valid_app(interaction, application)
 
-            if not app:
-                raise InvalidApp
+        if not app:
+            raise InvalidApp
 
-            blacklisted = not await self.can_apply(interaction, application, int(user.id), True)
+        blacklisted = not await self.can_apply(interaction, application, int(user.id), True)
 
-            if blacklisted:
-                await interaction.response.send_message(f"{user.name} has already been blacklisted.", ephemeral=True)
-                return
+        if blacklisted:
+            await interaction.response.send_message(f"{user.name} has already been blacklisted.", ephemeral=True)
+            return
 
-            table = await self.record_complete(interaction, application, int(user.id), True)
+        table = await self.record_complete(interaction, application, int(user.id), True)
 
-            await interaction.response.send_message(f"{user.name} has been blacklisted from {application}", ephemeral=True)
+        await interaction.response.send_message(f"{user.name} has been blacklisted from {application}", ephemeral=True)
 
-        except Exception as e:
-
-            if isinstance(e, InvalidApp):
-                emb = await self.embedify("Error", "Please provide a valid application", discord.Color.red())
-                await interaction.response.send_message(embed=emb)
-            elif isinstance(e, AttributeError):
-                emb = await self.embedify("Error", "Please provide a valid user id", discord.Color.red())
-                await interaction.response.send_message(embed=emb)
-            else:
-                traceback.print_exc()
 
     @blacklist_group.command(name="remove", description="Allows user to apply after they have applied or have been blacklisted")
     @app_commands.autocomplete(application=app_autocomplete)
@@ -221,10 +256,10 @@ class Application(commands.Cog):
         except Exception as e:
 
             if isinstance(e, InvalidApp):
-                emb = await self.embedify("Error", "Please provide a valid application", discord.Color.red())
+                emb = self.embedify("Error", "Please provide a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             elif isinstance(e, AttributeError):
-                emb = await self.embedify("Error", "Please provide a valid user id", discord.Color.red())
+                emb = self.embedify("Error", "Please provide a valid user id", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             else:
                 traceback.print_exc()
@@ -261,10 +296,10 @@ class Application(commands.Cog):
         except Exception as e:
 
             if isinstance(e, InvalidApp):
-                emb = await self.embedify("Error", "Please provide a valid application", discord.Color.red())
+                emb = self.embedify("Error", "Please provide a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             elif isinstance(e, AttributeError):
-                emb = await self.embedify("Error", f"{e}", discord.Color.red())
+                emb = self.embedify("Error", f"{e}", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             else:
                 traceback.print_exc()
@@ -272,7 +307,9 @@ class Application(commands.Cog):
 
     @set_group.command(name="questions", description="Sets main questions for application")
     @app_commands.autocomplete(application=app_autocomplete)
-    async def set_questions(self, interaction: discord.Interaction, application: str, *, question1 : str, question2 : Optional[str], question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
+    # async def set_questions(self, interaction: discord.Interaction, application: str, *, question1 : str, question2 : Optional[str], question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
+    async def set_questions(self, interaction: discord.Interaction, application: str):
+
         try:
 
             namespace = interaction.namespace
@@ -307,7 +344,7 @@ class Application(commands.Cog):
             if not isinstance(e, AttributeError):
                 traceback.print_exc()
             else:
-                emb = await self.embedify("Error", "Please input a valid application", discord.Color.red())
+                emb = self.embedify("Error", "Please input a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             # raise InvalidTable() from None
 
@@ -315,63 +352,71 @@ class Application(commands.Cog):
     # async def set_last(self, interaction : discord.Interaction):
     #     pass
 
-    @app_group.command(name="delete", description="Deletes specified application")
-    @app_commands.autocomplete(application=app_autocomplete)
-    async def delete_app(self, interaction : discord.Interaction, application : str):
-        try:
-
-            app = await self.valid_app(interaction, application)
-
-            if not app:
-                raise InvalidApp
-
-            await self.prisma.application.delete_many(
-                where={
-                    'application': application,
-                    'guildId': interaction.guild_id
-                }
-            )
-
-        except Exception as e:
-
-            if isinstance(e, InvalidApp):
-                emb = await self.embedify("Error", "Please provide a valid application", discord.Color.red())
-                await interaction.response.send_message(embed=emb)
-            else:
-                traceback.print_exc()
+    # @app_group.command(name="delete", description="Deletes specified application")
+    # @app_commands.autocomplete(application=app_autocomplete)
+    # async def delete_app(self, interaction : discord.Interaction, application : str):
+    #     try:
+    #
+    #         app = await self.valid_app(interaction, application)
+    #
+    #         if not app:
+    #             raise InvalidApp
+    #
+    #         await self.prisma.application.delete_many(
+    #             where={
+    #                 'application': application,
+    #                 'guildId': interaction.guild_id
+    #             }
+    #         )
+    #
+    #     except Exception as e:
+    #
+    #         if isinstance(e, InvalidApp):
+    #             emb = self.embedify("Error", "Please provide a valid application", discord.Color.red())
+    #             await interaction.response.send_message(embed=emb)
+    #         else:
+    #             traceback.print_exc()
 
     @app_group.command(name="run", description="Runs application with specified application name and answer channel")
     @app_commands.autocomplete(application=app_autocomplete)
-    async def run(self, interaction: discord.Interaction, application: str, answer_channel : Union[discord.Thread, discord.TextChannel]):
-        try:
+    async def run(self, interaction: discord.Interaction, application: str, destination : Union[discord.Thread, discord.TextChannel]):
 
-            app = await self.valid_app(interaction, application)
-
-
-            if not app:
-                raise InvalidApp
-            # elif isinstance(channel, self.NoneType):
-            #     raise InvalidChannel
+        app = await self.valid_app(interaction, application)
 
 
-            view = Apps(self.client, application, self.prisma, answer_channel, self)
-            await interaction.response.send_message(view=view)
+        if not app:
+            raise InvalidApp
 
-        except Exception as e:
+        emb = await self.prisma.config.find_first(
+            where={
+                'application' : application,
+                'guildId' : interaction.guild_id
+            }
+        )
 
-            if isinstance(e, AttributeError):
-                emb = await self.embedify("Error", "Please input a valid application", discord.Color.red())
-                await interaction.response.send_message(embed=emb)
-            elif isinstance(e, InvalidChannel):
-                emb = await self.embedify("Error", "Please provide a valid channel id", discord.Color.red())
-                await interaction.response.send_message(embed=emb)
-            elif isinstance(e, InvalidApp):
-                emb = await self.embedify("Error", "Please provide a valid application", discord.Color.red())
-                await interaction.response.send_message(embed=emb)
-            else:
-                traceback.print_exc()
+        if not emb:
+            raise InvalidEmbed(f"No embed exists for {application}")
 
-    @group.command(name="questions", description="Used for listing all questions of an application relative to guild")
+
+        role_id = await self.prisma.application.find_first(
+            where={
+                'application': application,
+                'guildId': interaction.guild_id
+            }
+        )
+
+        channel = interaction.channel
+
+        view = Apps(self.client, application, self.prisma, destination, self, role_id.roleid)
+
+        embed = discord.Embed.from_dict(json.loads(emb.embed))
+
+        await channel.send(embed=embed, view=view)
+
+        await interaction.response.send_message("Application was ran", ephemeral=True)
+
+
+    @app_commands.command(name="questions", description="Used for listing all questions of an application relative to guild")
     @app_commands.autocomplete(application=app_autocomplete)
     async def questions(self, interaction : discord.Interaction, application : str):
 
@@ -394,10 +439,10 @@ class Application(commands.Cog):
             if not isinstance(e, AttributeError):
                 traceback.print_exc()
             else:
-                emb = await self.embedify("Error", "Please input a valid application", discord.Color.red())
+                emb = self.embedify("Error", "Please input a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
 
-    @group.command(name="applications", description="Used for listing all applications of specific guild")
+    @app_commands.command(name="applications", description="Used for listing all applications of specific guild")
     async def applications(self, interaction : discord.Interaction):
 
         try:

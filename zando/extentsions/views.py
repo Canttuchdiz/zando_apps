@@ -1,32 +1,54 @@
 import discord
 from discord import app_commands
-from zando.utils import PrismaExt
-from zando.extentsions import UserMethods
+from discord.ui import Modal
+from discord import Embed
+from zando.utils import PrismaExt, TableTypes, TypeConvert
+from zando.extentsions.callback import UserMethods
+from zando.extentsions.modals import QuestionAdd, DescriptionAdd, FieldAdd
+from zando.extentsions.selects import Fields
 from discord.ui import View
 import traceback
 import copy
+from typing import List
+import json
+from prisma import Json
 
 class Apps(View):
 
-    def __init__(self, instance, app_name, prisma, channel, cog):
+    def __init__(self, instance, app_name, prisma, channel, cog, role_id):
         super().__init__(timeout=None)
         self.client = instance
-        self.app_name = app_name
-        self.prisma : PrismaExt = prisma
-        self.channel : discord.channel.TextChannel = channel
         self.instance = cog
+        self.app_name = app_name
+        self.prisma : PrismaExt = self.instance.prisma
+        self.channel : discord.channel.TextChannel = channel
+        self.role_id = role_id
+        self.applying : List[discord.Member] = self.instance.applying
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
 
-        can_apply = await self.instance.can_apply(interaction, self.app_name, interaction.user.id, False)
-        blacklisted = not await self.instance.can_apply(interaction, self.app_name, interaction.user.id, True)
+        is_applying : bool = interaction.user.id in self.applying
+        has_role : bool = True if self.role_id in [role.id for role in interaction.user.roles] else False
+        can_apply : bool = await self.instance.can_apply(interaction, self.app_name, interaction.user.id, False)
+        blacklisted : bool = not await self.instance.can_apply(interaction, self.app_name, interaction.user.id, True)
 
         if not can_apply or blacklisted:
 
             await interaction.response.send_message("You have already applied or are blacklisted.", ephemeral=True)
             return False
 
+        elif is_applying:
+
+            await interaction.response.send_message("You are in the middle of an application", ephemeral=True)
+            return False
+
+        elif not has_role:
+
+            await interaction.response.send_message("You do not have the role necessary to take the application", ephemeral=True)
+            return False
+
         return can_apply
+
 
 
     @discord.ui.button(label="Application", style=discord.ButtonStyle.red)
@@ -44,7 +66,11 @@ class Apps(View):
 
             await interaction.response.send_message("Application was sent in your direct messages", ephemeral=True)
 
+            self.applying.append(interaction.user.id)
+
             answers = await UserMethods.user_response(self.client, interaction.user, [question.question for question in copy.copy(questions)])
+
+            self.applying.remove(interaction.user.id)
 
             if answers is not None:
 
@@ -59,3 +85,153 @@ class Apps(View):
 
         except Exception as e:
             traceback.print_exc()
+
+class Create(View):
+
+    # Get values then submit button actually publishes changes by adding to db
+    def __init__(self, bot, instance, app_name, prisma, role, reapply):
+        super().__init__(timeout=None)
+        self.client = bot
+        self.instance = instance
+        self.app_name = app_name
+        self.prisma = prisma
+        self.questions = []
+        self.role = role
+        self.reapply = reapply
+
+    @discord.ui.button(label="Add Question", style=discord.ButtonStyle.blurple)
+    async def question_add(self, interaction : discord.Interaction, button : discord.ui.Button):
+
+        try:
+
+            modal = QuestionAdd(self.client, self.app_name, self.prisma, self.questions)
+
+            await interaction.response.send_modal(modal)
+
+        except Exception as e:
+            traceback.print_exc()
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction : discord.Interaction, button : discord.ui.Button):
+
+        emb = self.instance.embedify("Cancellation successful", f"{self.app_name} was not created", discord.Color.red())
+        await interaction.response.edit_message(embed=emb, view=None)
+
+    @discord.ui.button(label="Done", style=discord.ButtonStyle.green)
+    async def done(self, interaction : discord.Interaction, button : discord.ui.Button):
+
+        try:
+
+            table = await self.prisma.application.create(
+                data={
+                    'roleid': int(self.role.id),
+                    'userid': interaction.user.id,
+                    'application': self.app_name,
+                    'reapply': TypeConvert.a[self.reapply],
+                    'guildId': interaction.guild_id
+
+                }
+            )
+
+            if self.questions:
+
+                table = TableTypes.options[0]
+                #
+                # id = await self.prisma.where_first(table, table, app_name)
+
+                id = await self.prisma.application.find_first(
+
+                    where={
+                        table: self.app_name,
+                        "guildId": interaction.guild_id
+                    },
+
+                )
+
+                for question in self.questions:
+                    table = await self.prisma.question.create(
+                        data={
+                            'question': question,
+                            'applicationId': id.id
+
+                        }
+                    )
+
+            emb = self.instance.embedify("Success", f"Questions successfully appended into {self.app_name}",
+                                      discord.Color.green())
+            await interaction.response.edit_message(embed=emb, view=None)
+
+        except Exception as e:
+            traceback.print_exc()
+
+class QuestionEdit(View):
+
+    def __init__(self, bot, instance, prisma, app_name):
+        super().__init__(timeout=None)
+        self.client = bot
+        self.instance = instance
+        self.prisma : PrismaExt = prisma
+        self.app_name : str = app_name
+        self.questions = []
+
+    @discord.ui.button(label="Add Question", style=discord.ButtonStyle.primary)
+    async def adder(self, interaction : discord.Interaction, button : discord.ui.Button):
+        pass
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        emb = self.instance.embedify("Cancellation successful", "Question setting session was closed",
+                                           discord.Color.red())
+        await interaction.response.edit_message(embed=emb, view=None)
+
+class AppEmbed(View):
+
+    def __init__(self, bot, instance, prisma, app_name, embed : Embed):
+        super().__init__(timeout=None)
+        self.options = [discord.SelectOption(label='', value='', description="")]
+        self.select = Fields(self.options)
+        self.add_item(self.select)
+        self.client = bot
+        self.instance = instance
+        self.prisma : PrismaExt = prisma
+        self.app_name = app_name
+        self.embed = embed
+
+
+    @discord.ui.button(label="Add Description", style=discord.ButtonStyle.primary)
+    async def description(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        modal = DescriptionAdd(self.client, self.app_name, self.prisma, self.embed)
+        await interaction.response.send_modal(modal)
+
+    @discord.ui.button(label="Add Field", style=discord.ButtonStyle.primary)
+    async def field_add(self, interaction: discord.Interaction, button: discord.ui.Button):
+        modal = FieldAdd(self.client, self.app_name, self.prisma, self.embed, self, self.select)
+        await interaction.response.send_modal(modal)
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        emb = self.instance.embedify("Cancellation successful", "Question setting session was closed",
+                                           discord.Color.red())
+        await interaction.response.edit_message(embed=emb, view=None)
+
+    @discord.ui.button(label="Done", style=discord.ButtonStyle.success)
+    async def done(self, interaction: discord.Interaction, button: discord.ui.Button):
+        emb_json = self.embed.to_dict()
+        await self.prisma.config.create(
+            data={
+                'embed' : Json(emb_json),
+                'application' : self.app_name,
+                'guildId' : interaction.guild_id
+            }
+        )
+
+        emb = self.instance.embedify("Configuration Successful", "Embed successfully appended to application",
+                                     discord.Color.green())
+        await interaction.response.edit_message(embed=emb, view=None)
+
+
+
+
+
+

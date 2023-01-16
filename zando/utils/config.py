@@ -1,4 +1,4 @@
 
 class Config:
 
-    VERSION = '0.4.5-alpha'
+    VERSION = '0.5.0'

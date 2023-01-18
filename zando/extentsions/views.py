@@ -2,7 +2,6 @@ import discord
 from discord import app_commands
 from discord.ui import Modal
 from discord import Embed
-from .callback import UserMethods
 from .modals import QuestionAdd, DescriptionAdd, FieldAdd, PrismaExt, TypeConvert, TableTypes, UtilMethods
 from .selects import Fields
 from zando.utils.util import UtilMethods
@@ -68,6 +67,7 @@ class Apps(View):
 
             self.applying.append(interaction.user.id)
 
+            from .callback import UserMethods
             answers = await UserMethods.user_response(self.client, interaction.user, self.app_name, [question.question for question in copy.copy(questions)])
 
             self.applying.remove(interaction.user.id)

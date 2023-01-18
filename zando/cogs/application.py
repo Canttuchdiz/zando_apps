@@ -5,8 +5,10 @@ import pathlib
 import asyncio
 from prisma import Prisma
 from prisma.errors import UniqueViolationError
-from zando.utils import PrismaExt, TableTypes, InvalidChannel, InvalidApp, TypeConvert, InvalidEmbed
-from zando.extentsions import UserMethods, Apps, Create, QuestionEdit, AppEmbed
+from zando.utils.util import TableTypes, TypeConvert, UtilMethods
+from zando.utils.extentsions import PrismaExt
+from zando.utils.errors import InvalidChannel, InvalidApp, InvalidEmbed
+from zando.extentsions.callback import Apps, Create, QuestionEdit, AppEmbed
 import traceback
 from typing import Optional, Literal, Union, List
 from discord.ui import View
@@ -114,18 +116,6 @@ class Application(commands.Cog):
         except Exception as e:
             traceback.print_exc()
 
-    @staticmethod
-    def embedify(title : str, message : str, color : discord.Color) -> discord.Embed:
-        emb = discord.Embed(color=color)
-        emb.add_field(name=title, value=message)
-        return emb
-
-
-    # @commands.command(name="start")
-    # async def start(self, interaction, app_name : str) -> None:
-    #     # Pass in list of questions
-    #     self.receiver.user_response(interaction.author, )
-
     @app_commands.command(name="create", description="Creates a new application with the id of the lowest role allowed to start the application")
     async def create(self, interaction: discord.Interaction, name: str, role: discord.Role, reapply : Literal['Yes', 'No']) -> None:
 
@@ -156,7 +146,7 @@ class Application(commands.Cog):
             if not isinstance(e, UniqueViolationError):
                 traceback.print_exc()
             else:
-                emb = self.embedify("Error", f"There exists an application with the name {name}", discord.Color.red())
+                emb = UtilMethods.embedify("Error", f"There exists an application with the name {name}", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
 
 
@@ -256,10 +246,10 @@ class Application(commands.Cog):
         except Exception as e:
 
             if isinstance(e, InvalidApp):
-                emb = self.embedify("Error", "Please provide a valid application", discord.Color.red())
+                emb = UtilMethods.embedify("Error", "Please provide a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             elif isinstance(e, AttributeError):
-                emb = self.embedify("Error", "Please provide a valid user id", discord.Color.red())
+                emb = UtilMethods.embedify("Error", "Please provide a valid user id", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             else:
                 traceback.print_exc()
@@ -296,10 +286,10 @@ class Application(commands.Cog):
         except Exception as e:
 
             if isinstance(e, InvalidApp):
-                emb = self.embedify("Error", "Please provide a valid application", discord.Color.red())
+                emb = UtilMethods.embedify("Error", "Please provide a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             elif isinstance(e, AttributeError):
-                emb = self.embedify("Error", f"{e}", discord.Color.red())
+                emb = UtilMethods.embedify("Error", f"{e}", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             else:
                 traceback.print_exc()
@@ -336,7 +326,7 @@ class Application(commands.Cog):
 
                     }
                 )
-            emb = await self.embedify("Success", f"Questions successfully appended into {application}", discord.Color.green())
+            emb = UtilMethods.embedify("Success", f"Questions successfully appended into {application}", discord.Color.green())
             await interaction.response.send_message(embed=emb)
 
         except Exception as e:
@@ -344,7 +334,7 @@ class Application(commands.Cog):
             if not isinstance(e, AttributeError):
                 traceback.print_exc()
             else:
-                emb = self.embedify("Error", "Please input a valid application", discord.Color.red())
+                emb = UtilMethods.embedify("Error", "Please input a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
             # raise InvalidTable() from None
 
@@ -439,7 +429,7 @@ class Application(commands.Cog):
             if not isinstance(e, AttributeError):
                 traceback.print_exc()
             else:
-                emb = self.embedify("Error", "Please input a valid application", discord.Color.red())
+                emb = UtilMethods.embedify("Error", "Please input a valid application", discord.Color.red())
                 await interaction.response.send_message(embed=emb)
 
     @app_commands.command(name="applications", description="Used for listing all applications of specific guild")

@@ -1,5 +1,6 @@
 import aiofiles
 import json
+import discord
 import prisma
 import traceback
 import enum
@@ -19,6 +20,19 @@ class UtilMethods:
         with open(path, encoding='utf-8') as f:
             content = f.read()
             return json.loads(content)
+
+    @staticmethod
+    async def cancel_interaction(body : str, interaction : discord.Interaction, instance):
+        emb = UtilMethods.embedify("Cancellation successful", body,
+                                     discord.Color.red())
+        await interaction.response.edit_message(embed=emb, view=None)
+
+
+    @staticmethod
+    def embedify(title : str, message : str, color : discord.Color) -> discord.Embed:
+        emb = discord.Embed(color=color)
+        emb.add_field(name=title, value=message)
+        return emb
 
 
 

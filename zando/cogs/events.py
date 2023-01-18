@@ -42,6 +42,9 @@ class Events(commands.Cog):
             except discord.HTTPException:
                 pass
 
+        elif isinstance(error, commands.NotOwner):
+            await ctx.send(f"{ctx.command} is reserved for the bot owners.")
+
             # For this error example we check to see where it came from...
         elif isinstance(error, commands.BadArgument):
             if ctx.command.qualified_name == 'tag list':  # Check if the command being invoked is 'tag list'

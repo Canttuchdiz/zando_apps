@@ -1,7 +1,7 @@
 import discord
 from discord import ui, Embed
 from discord.ui import Modal
-from zando.utils import TableTypes, InvalidFields
+from zando.utils import TableTypes, InvalidFields, TypeConvert, PrismaExt, UtilMethods
 from typing import List
 import traceback
 
@@ -68,7 +68,7 @@ class FieldAdd(Modal, title="Adding Fields"):
         proceed = self.name.value or self.value.value
 
         if not proceed:
-            emb = self.instance.instance.embedify("Error", "One field must not be blank", discord.Color.red())
+            emb = UtilMethods.embedify("Error", "One field must not be blank", discord.Color.red())
             await interaction.response.send_message(embed=emb, ephemeral=True)
 
         return proceed

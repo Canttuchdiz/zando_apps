@@ -2,10 +2,10 @@ import discord
 from discord import app_commands
 from discord.ui import Modal
 from discord import Embed
-from zando.utils import PrismaExt, TableTypes, TypeConvert
-from zando.extentsions.callback import UserMethods
-from zando.extentsions.modals import QuestionAdd, DescriptionAdd, FieldAdd
-from zando.extentsions.selects import Fields
+from .callback import UserMethods
+from .modals import QuestionAdd, DescriptionAdd, FieldAdd, PrismaExt, TypeConvert, TableTypes, UtilMethods
+from .selects import Fields
+from zando.utils.util import UtilMethods
 from discord.ui import View
 import traceback
 import copy
@@ -68,7 +68,7 @@ class Apps(View):
 
             self.applying.append(interaction.user.id)
 
-            answers = await UserMethods.user_response(self.client, interaction.user, [question.question for question in copy.copy(questions)])
+            answers = await UserMethods.user_response(self.client, interaction.user, self.app_name, [question.question for question in copy.copy(questions)])
 
             self.applying.remove(interaction.user.id)
 
@@ -113,9 +113,8 @@ class Create(View):
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def cancel(self, interaction : discord.Interaction, button : discord.ui.Button):
+        await UtilMethods.cancel_interaction("Cancellation successful", f"{self.app_name} was not created", interaction, self.instance)
 
-        emb = self.instance.embedify("Cancellation successful", f"{self.app_name} was not created", discord.Color.red())
-        await interaction.response.edit_message(embed=emb, view=None)
 
     @discord.ui.button(label="Done", style=discord.ButtonStyle.green)
     async def done(self, interaction : discord.Interaction, button : discord.ui.Button):
@@ -157,7 +156,7 @@ class Create(View):
                         }
                     )
 
-            emb = self.instance.embedify("Success", f"Questions successfully appended into {self.app_name}",
+            emb = UtilMethods.embedify("Success", f"Questions successfully appended into {self.app_name}",
                                       discord.Color.green())
             await interaction.response.edit_message(embed=emb, view=None)
 
@@ -180,9 +179,8 @@ class QuestionEdit(View):
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        emb = self.instance.embedify("Cancellation successful", "Question setting session was closed",
-                                           discord.Color.red())
-        await interaction.response.edit_message(embed=emb, view=None)
+        await UtilMethods.cancel_interaction("Question setting session was closed", interaction, self.instance)
+
 
 class AppEmbed(View):
 
@@ -211,9 +209,7 @@ class AppEmbed(View):
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        emb = self.instance.embedify("Cancellation successful", "Question setting session was closed",
-                                           discord.Color.red())
-        await interaction.response.edit_message(embed=emb, view=None)
+        await UtilMethods.cancel_interaction("Embed configuration session was closed", interaction, self.instance)
 
     @discord.ui.button(label="Done", style=discord.ButtonStyle.success)
     async def done(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -226,12 +222,20 @@ class AppEmbed(View):
             }
         )
 
-        emb = self.instance.embedify("Configuration Successful", "Embed successfully appended to application",
+        emb = UtilMethods.embedify("Configuration Successful", "Embed successfully appended to application",
                                      discord.Color.green())
         await interaction.response.edit_message(embed=emb, view=None)
 
 
 
+class TakeApp(View):
 
+    def __init__(self, bot, app_name : str):
+        super().__init__(timeout=None)
+        self.client = bot
+        self.app_name = app_name
 
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await UtilMethods.cancel_interaction("Application has been closed!", interaction, self.instance)
 

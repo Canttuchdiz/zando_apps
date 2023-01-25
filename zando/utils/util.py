@@ -22,10 +22,11 @@ class UtilMethods:
             return json.loads(content)
 
     @staticmethod
-    async def cancel_interaction(body : str, interaction : discord.Interaction, instance):
+    async def cancel_interaction(view, body : str, interaction : discord.Interaction):
         emb = UtilMethods.embedify("Cancellation successful", body,
                                      discord.Color.red())
         await interaction.response.edit_message(embed=emb, view=None)
+        view.stop()
 
 
     @staticmethod

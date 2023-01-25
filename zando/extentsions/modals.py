@@ -87,8 +87,49 @@ class FieldAdd(Modal, title="Adding Fields"):
         await interaction.response.edit_message(embed=self.embed, view=self.instance)
 
 
+class ApplyAdd(Modal, title="Response Input"):
+
+    def __init__(self, bot, app_name, question : str, embed, answer : list, index : int):
+        super().__init__(timeout=None)
+        self.question = question
+        self.answer_response = ui.TextInput(label=self.question, style=discord.TextStyle.paragraph, required=True)
+        self.add_item(self.answer_response)
+        self.client = bot
+        self.app_name = app_name
+        self.embed : Embed = embed
+        # self.view = view
+        self.answer : list = answer
+        self.index = index
+
+    async def on_submit(self, interaction: discord.Interaction):
+
+        try:
+            self.answer.clear()
+            # print(self.answer_response.value)
+            [self.answer.append(item) for item in self.answer_response.value.split()]
+            # print(self.answer)
+            field = self.embed.fields[0]
+            self.embed.set_field_at(index=0, name=field.name, value=self.answer_response.value)
+            await interaction.response.edit_message(embed=self.embed)
+
+        except IndexError as e:
+            self.embed.add_field(name=f"Answer", value=self.answer_response.value)
+            await interaction.response.edit_message(embed=self.embed)
 
 
+class EditAdd(Modal, title="Response Edit"):
 
+    def __init__(self, question: str, embed : Embed, answers : list, index: int):
+        super().__init__(timeout=None)
+        self.question = question
+        self.answer_response = ui.TextInput(label=self.question, style=discord.TextStyle.paragraph, required=True)
+        self.add_item(self.answer_response)
+        self.fem: Embed = embed
+        self.answers = answers
+        self.index = index
 
-
+    async def on_submit(self, interaction: discord.Interaction):
+        self.answers[self.index] = self.answer_response.value
+        field = self.fem.fields[0]
+        self.fem.set_field_at(index=self.index, name=field.name, value=self.answer_response.value)
+        await interaction.response.edit_message(embed=self.fem)

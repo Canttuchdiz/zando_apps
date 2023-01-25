@@ -2,6 +2,7 @@ import discord
 from discord import Interaction
 from discord.app_commands import AppCommandError
 from discord.ext import commands
+from zando.utils.config import Config
 from zando.utils import InvalidApp, InvalidEmbed, UtilMethods
 import traceback
 import sys
@@ -39,7 +40,13 @@ class Handlers(commands.Cog):
             await interaction.response.send_message(embed=emb, ephemeral=True)
 
         else:
-            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+            emb = discord.Embed(title="Error", description=f"Type: {type(error)}", color=discord.Color.red())
+            emb.set_author(name=interaction.user.name, icon_url=interaction.user.avatar)
+            emb.add_field(name="Message", value=error)
+            emb.set_footer(text=error.__traceback__, icon_url=self.bot.user.avatar)
+            echannel = self.bot.get_channel(1065009230215647323)
+            await echannel.send(embed=emb)
+            # traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 async def setup(bot):
     await bot.add_cog(Handlers(bot))

@@ -8,7 +8,7 @@ from prisma.errors import UniqueViolationError
 from zando.utils.util import TableTypes, TypeConvert, UtilMethods
 from zando.utils.extentsions import PrismaExt
 from zando.utils.errors import InvalidChannel, InvalidApp, InvalidEmbed
-from zando.extentsions.callback import Apps, Create, QuestionEdit, AppEmbed
+from zando.extentsions.callback import Apps, Create, QuestionEdit, AppEmbed, ImportView
 import traceback
 from typing import Optional, Literal, Union, List
 from discord.ui import View
@@ -167,6 +167,15 @@ class Application(commands.Cog):
     #
     #     except Exception as e:
     #         traceback.print_exc()
+
+    # @app_group.command(name="import")
+    # async def app_import(self, interaction : discord.Interaction, form : str):
+    #     emb = discord.Embed(title="Sign-In", description="Press button to sign into google account that has the form. Once you sign in, the form will be added to your applications list",
+    #                         color=discord.Color.yellow())
+    #     await interaction.response.send_message("Continue process in dms...", ephemeral=True)
+    #     view = ImportView(self.client)
+    #     await interaction.user.send(embed=emb, view=view)
+
     @app_group.command(name="embed", description="Configures the embed that will be sent when the application is ran")
     @app_commands.autocomplete(application=app_autocomplete)
     async def embed_create(self, interaction : discord.Interaction, application : str):
@@ -295,48 +304,48 @@ class Application(commands.Cog):
                 traceback.print_exc()
 
 
-    @set_group.command(name="questions", description="Sets main questions for application")
-    @app_commands.autocomplete(application=app_autocomplete)
-    # async def set_questions(self, interaction: discord.Interaction, application: str, *, question1 : str, question2 : Optional[str], question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
-    async def set_questions(self, interaction: discord.Interaction, application: str):
-
-        try:
-
-            namespace = interaction.namespace
-            questions = [getattr(namespace, v) for v in dir(namespace) if v.startswith("question")]
-
-            table = TableTypes.options[0]
-            #
-            # id = await self.prisma.where_first(table, table, app_name)
-
-            id = await self.prisma.application.find_first(
-
-                where={
-                    table : application,
-                    "guildId" : interaction.guild_id
-                },
-
-            )
-
-            for question in questions:
-                table = await self.prisma.question.create(
-                    data={
-                        'question': question,
-                        'applicationId': id.id
-
-                    }
-                )
-            emb = UtilMethods.embedify("Success", f"Questions successfully appended into {application}", discord.Color.green())
-            await interaction.response.send_message(embed=emb)
-
-        except Exception as e:
-
-            if not isinstance(e, AttributeError):
-                traceback.print_exc()
-            else:
-                emb = UtilMethods.embedify("Error", "Please input a valid application", discord.Color.red())
-                await interaction.response.send_message(embed=emb)
-            # raise InvalidTable() from None
+    # @set_group.command(name="questions", description="Sets main questions for application")
+    # @app_commands.autocomplete(application=app_autocomplete)
+    # # async def set_questions(self, interaction: discord.Interaction, application: str, *, question1 : str, question2 : Optional[str], question3 : Optional[str], question4 : Optional[str], question5 : Optional[str], question6 : Optional[str], question7 : Optional[str], question8 : Optional[str], question9 : Optional[str], question10 : Optional[str], question11 : Optional[str], question12 : Optional[str], question13 : Optional[str], question14 : Optional[str], question15 : Optional[str]):
+    # async def set_questions(self, interaction: discord.Interaction, application: str):
+    #
+    #     try:
+    #
+    #         namespace = interaction.namespace
+    #         questions = [getattr(namespace, v) for v in dir(namespace) if v.startswith("question")]
+    #
+    #         table = TableTypes.options[0]
+    #         #
+    #         # id = await self.prisma.where_first(table, table, app_name)
+    #
+    #         id = await self.prisma.application.find_first(
+    #
+    #             where={
+    #                 table : application,
+    #                 "guildId" : interaction.guild_id
+    #             },
+    #
+    #         )
+    #
+    #         for question in questions:
+    #             table = await self.prisma.question.create(
+    #                 data={
+    #                     'question': question,
+    #                     'applicationId': id.id
+    #
+    #                 }
+    #             )
+    #         emb = UtilMethods.embedify("Success", f"Questions successfully appended into {application}", discord.Color.green())
+    #         await interaction.response.send_message(embed=emb)
+    #
+    #     except Exception as e:
+    #
+    #         if not isinstance(e, AttributeError):
+    #             traceback.print_exc()
+    #         else:
+    #             emb = UtilMethods.embedify("Error", "Please input a valid application", discord.Color.red())
+    #             await interaction.response.send_message(embed=emb)
+    #         # raise InvalidTable() from None
 
     # @set_group.command(name="last", description="Sets last question for an application")
     # async def set_last(self, interaction : discord.Interaction):

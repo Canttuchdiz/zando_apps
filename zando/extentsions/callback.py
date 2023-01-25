@@ -1,7 +1,7 @@
 
 import discord
 from discord.ext import commands
-from .views import TakeApp, Apps, Create, QuestionEdit, AppEmbed
+from .views import TakeApp, Apps, Create, QuestionEdit, AppEmbed, SubmitApp, ImportView
 from datetime import datetime
 import pathlib
 
@@ -15,7 +15,7 @@ class UserMethods:
 
     #Make more efficent later
     @staticmethod
-    async def user_response(client : commands.Bot, user : discord.Member, app_name : str, questions : list) -> list:
+    async def user_response(client : commands.Bot, user : discord.Member, app_name : str, questions : list, coro) -> list:
 
         """
         Is the kinda callback used for getting application data.
@@ -25,7 +25,6 @@ class UserMethods:
 
 
         # Initializes some variables
-        questions.append("Do you want to submit? To submit write **submit** or **cancel** to cancel")
         answers = []
         view = TakeApp(client, app_name)
         # questF = [quest for quest in questions if "last" in quest][0]
@@ -51,16 +50,8 @@ class UserMethods:
             #     if answer.lower() == "cancel":
             #         await user.send("Application successfully closed!")
             #         return
-
-
-
-        fem = discord.Embed(title="Application successfully submitted!", color=discord.Color.green())
-
-        # Writes final response congratulating using question_last
-
-        final_response = answers[len(answers) - 1].lower()
-        if final_response != "submit":
-            await user.send("Closed! C ya :wave:")
-            return
-        await user.send(embed=fem)
-        return answers[:-1]
+            
+        view = SubmitApp(client, app_name, answers)
+        await user.send(view=view)
+        await view.wait()
+        return answers

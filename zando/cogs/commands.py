@@ -1,7 +1,9 @@
 from zando import *
 from typing import *
+import discord
 from discord.ext.commands import *
-from zando.utils import InvalidChannel
+from discord import app_commands
+from zando.utils import InvalidChannel, Config
 
 class Commands(commands.Cog):
 
@@ -66,8 +68,17 @@ class Commands(commands.Cog):
 
         await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
 
-
-
+    @app_commands.command(name="maintenance", description="Notifies owners of servers with the bot if there is downtime")
+    @app_commands.guilds(Config.MGUILD_ID)
+    async def maintenance(self, interaction: discord.Interaction, start_time: str):
+        await interaction.response.send_message(content=f"Sent a warning to {len(self.client.guilds)} Guild(s)")
+        for guild in self.client.guilds:
+            globalrestart_embed = discord.Embed(title="# ~ | ZandoApps Restart",
+                                                description=f"ZandoApps will face downtime starting {start_time}.\nWe'll use this time to migrate new changes towards the bot and patch any Errors.\nFor any questions or concerns, don't be afraid to [join our support server](https://discord.gg/Z2RkeYxD6k).\nThis downtime was issued by `{interaction.user}`")
+            globalrestart_embed.set_footer(text="ZandoApps™️ | Restart Occuring Soon",
+                                            icon_url="https://images-ext-1.discordapp.net/external/Qx2Yrx3EPyG3e71-cVFQuwxwti3ilhVrlasdoHgcanY/%3Fsize%3D4096/https/cdn.discordapp.com/icons/1037943321143812127/86536711183b7f56b1de9dcada217281.png") \
+                , globalrestart_embed.add_field(name="Guild Being Affected:", value=f"{guild.name} ({guild.id})")
+            await guild.owner.send(embed=globalrestart_embed)
 
 
 async def setup(bot):

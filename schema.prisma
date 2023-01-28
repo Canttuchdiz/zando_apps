@@ -39,6 +39,10 @@ model Records {
 }
 
 model Config {
-   userId BigInt
-   guildId BigInt @unique
+   id Int @id @default(autoincrement())
+   embed String
+   application String
+   guildId BigInt
+
+   @@unique([application, guildId])
 }

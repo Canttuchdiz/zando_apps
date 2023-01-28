@@ -3,7 +3,7 @@ import json
 import prisma
 import traceback
 import enum
-from zando.utils import TableTypes
+from .util import TableTypes
 
 class PrismaExt(prisma.Prisma):
 

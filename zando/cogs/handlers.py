@@ -44,7 +44,7 @@ class Handlers(commands.Cog):
             emb.set_author(name=interaction.user.name, icon_url=interaction.user.avatar)
             emb.add_field(name="Message", value=error)
             emb.set_footer(text=error.__traceback__, icon_url=self.bot.user.avatar)
-            echannel = self.bot.get_channel(1065009230215647323)
+            echannel = self.bot.get_channel(Config.ECHANNEL)
             await echannel.send(embed=emb)
             # traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 

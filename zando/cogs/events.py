@@ -1,3 +1,4 @@
+from discord.ext import commands
 from zando import *
 from zando.utils import UtilMethods, UTILS_DIR, InvalidChannel, Config
 
@@ -9,7 +10,7 @@ class Events(commands.Cog):
 
 
     def __init__(self, bot):
-        self.client = bot
+        self.client : commands.Bot = bot
         # self.id_list = UtilMethods.json_retriever(UTILS_DIR / 'tools/jsons/id_data.json')
 
     # Sets up do not disturb and it's "Listening to Cube"
@@ -22,6 +23,13 @@ class Events(commands.Cog):
         await self.client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Zando Apps"), status=discord.Status.do_not_disturb)
 
     #Excepts errors, handles them accordingly, and sends new exceptions to stderr for the interpreter to print out.
+
+    @commands.Cog.listener()
+    async def on_message(self, message : discord.Message):
+        if self.client.user.mentioned_in(message) and await self.client.is_owner(message.author):
+            await message.reply("Hey hottie :kiss: :heart:")
+
+
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         ignored = (commands.CommandNotFound,)
@@ -41,6 +49,9 @@ class Events(commands.Cog):
                 await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
             except discord.HTTPException:
                 pass
+
+        elif isinstance(error, commands.NotOwner):
+            await ctx.send(f"{ctx.command} is reserved for the bot owners.")
 
             # For this error example we check to see where it came from...
         elif isinstance(error, commands.BadArgument):

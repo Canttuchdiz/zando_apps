@@ -105,9 +105,9 @@ class ApplyAdd(Modal, title="Response Input"):
 
         try:
             self.answer.clear()
-            # print(self.answer_response.value)
+            # print(self.answer, self.answer_response.value)
             [self.answer.append(item) for item in self.answer_response.value.split()]
-            # print(self.answer)
+            # print(self.answer, self.answer_response.value)
             field = self.embed.fields[0]
             self.embed.set_field_at(index=0, name=field.name, value=self.answer_response.value)
             await interaction.response.edit_message(embed=self.embed)

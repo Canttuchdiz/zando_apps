@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 import os
 import traceback
-from zando.utils import InvalidChannel
+from zando.utils.config import Config
 import sys
 from contextlib import suppress
 
@@ -59,8 +59,8 @@ client = Bot()
 client.remove_command('help')
 
 
-@commands.check(UtilMethods.is_user)
 @client.command()
+@commands.is_owner()
 async def reload(ctx, cog_name):
     """Reloads a cog"""
     try:
@@ -68,5 +68,15 @@ async def reload(ctx, cog_name):
         await ctx.send(f"Reloaded cog: {cog_name}")
     except Exception as e:
         await ctx.send(f"Error: {e}")
+
+@client.event
+async def on_error(event, *args, **kwargs):
+    error_tup = sys.exc_info()
+    emb = discord.Embed(title=f"{event} Error", description=f"Type: {error_tup[0]}", color=discord.Color.red())
+    emb.set_author(name=client.user.name, icon_url=client.user.avatar)
+    emb.add_field(name="Message", value=error_tup[1])
+    emb.set_footer(text=error_tup[2], icon_url=client.user.avatar)
+    echannel = client.get_channel(Config.ECHANNEL)
+    await echannel.send(embed=emb)
 
 client.run(TOKEN)

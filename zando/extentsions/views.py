@@ -71,6 +71,8 @@ class Apps(View):
             self.applying.append(interaction.user.id)
 
             fem = discord.Embed(title="Answers", color=discord.Color.dark_green())
+            fem.set_author(name=interaction.user.name, icon_url=interaction.user.avatar)
+            fem.set_footer(text=f"ID : {interaction.user.id}")
             msg = None
             options : List[discord.SelectOption] = []
 

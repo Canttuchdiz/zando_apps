@@ -183,7 +183,7 @@ class Application(commands.Cog):
         app = await self.valid_app(interaction, application)
 
         if not app:
-            raise InvalidApp
+            raise InvalidApp(f"{application} is an invalid application")
 
         embed = await self.prisma.config.find_first(
             where={
@@ -211,7 +211,7 @@ class Application(commands.Cog):
         app = await self.valid_app(interaction, application)
 
         if not app:
-            raise InvalidApp
+            raise InvalidApp(f"{application} is an invalid application")
 
         blacklisted = not await self.can_apply(interaction, application, int(user.id), True)
 
@@ -232,7 +232,7 @@ class Application(commands.Cog):
             app = await self.valid_app(interaction, application)
 
             if not app:
-                raise InvalidApp
+                raise InvalidApp(f"{application} is an invalid application")
 
             blacklisted : bool = not await self.can_apply(interaction, application, int(user.id), True)
 
@@ -272,7 +272,7 @@ class Application(commands.Cog):
             app = await self.valid_app(interaction, application)
 
             if not app:
-                raise InvalidApp
+                raise InvalidApp(f"{application} is an invalid application")
 
             records = await self.prisma.records.find_many(
                 where={
@@ -384,7 +384,7 @@ class Application(commands.Cog):
 
 
         if not app:
-            raise InvalidApp
+            raise InvalidApp(f"{application} is an invalid application")
 
         emb = await self.prisma.config.find_first(
             where={

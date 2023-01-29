@@ -71,6 +71,8 @@ class Apps(View):
             self.applying.append(interaction.user.id)
 
             fem = discord.Embed(title="Answers", color=discord.Color.dark_green())
+            fem.set_author(name=interaction.user.name, icon_url=interaction.user.avatar)
+            fem.set_footer(text=f"ID : {interaction.user.id}")
             msg = None
             options : List[discord.SelectOption] = []
 
@@ -192,7 +194,7 @@ class Create(View):
         except Exception as e:
             traceback.print_exc()
 
-class QuestionEdit(View):
+class AppConfigMenu(View):
 
     def __init__(self, bot, instance, prisma, app_name):
         super().__init__(timeout=None)
@@ -323,6 +325,7 @@ class SubmitApp(View):
         await interaction.response.edit_message(embed=emb, view=None)
         self.fem.color = discord.Color.blue()
         await self.channel.send(embed=self.fem)
+        self.answers.clear()
         self.stop()
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger)

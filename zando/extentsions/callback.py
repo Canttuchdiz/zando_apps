@@ -1,7 +1,7 @@
 
 import discord
 from discord.ext import commands
-from .views import TakeApp, Apps, Create, QuestionEdit, AppEmbed, SubmitApp, ImportView
+from .views import TakeApp, Apps, Create, AppConfigMenu, AppEmbed, SubmitApp, ImportView
 from datetime import datetime
 import pathlib
 

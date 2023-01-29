@@ -14,7 +14,7 @@ class LogCog(commands.Cog):
 
         emb = discord.Embed(title=guild.name, description=invite.url, color=discord.Color.blue())
         emb.add_field(name="Member Count", value=guild.member_count)
-        emb.set_author(name={guild.owner.name}, icon_url=guild.owner.avatar)
+        emb.set_author(name=guild.owner.name, icon_url=guild.owner.avatar)
         emb.set_footer(text=f"ID : {guild.id}", icon_url=self.client.user.avatar)
 
         await server_channel.send(embed=emb)

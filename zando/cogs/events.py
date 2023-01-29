@@ -62,7 +62,7 @@ class Events(commands.Cog):
             # All other Errors not returned come here. And we can just print the default TraceBack.
             # print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
             # traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-            emb = discord.Embed(title="Error", description=f"Type: {type(error)}", color=discord.Color.red())
+            emb = discord.Embed(title="Invoke Handler", description=f"Type: {type(error)}", color=discord.Color.red())
             emb.set_author(name=ctx.user.name, icon_url=ctx.user.avatar)
             emb.add_field(name="Message", value=error)
             emb.set_footer(text=error.__traceback__, icon_url=self.client.user.avatar)

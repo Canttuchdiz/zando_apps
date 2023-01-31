@@ -150,23 +150,39 @@ class Application(commands.Cog):
                 await interaction.response.send_message(embed=emb)
 
 
-    # @app_commands.command(name="delete", description="Deletes specific question as indicated by input given")
-    # async def delete(self, ctx, table: str):
-    #     pass
-    #
+    @app_commands.command(name="delete", description="Deletes specific question as indicated by input given")
+    async def delete(self, ctx, table: str):
+        pass
 
-    # @set_group.command(name="config", description="Is used to configure some aspects of the bot")
-    # async def configuration(self, interaction : discord.Interaction, editorId : int):
-    #     try:
-    #         table = await self.prisma.config.create(
-    #             data={
-    #                 "role_id" : editorId,
-    #                 "guildId" : interaction.guild_id
-    #             }
-    #         )
-    #
-    #     except Exception as e:
-    #         traceback.print_exc()
+
+    @set_group.command(name="questions", description="Is used to add, edit, and remove questions belonging to an app")
+    @app_commands.autocomplete(application=app_autocomplete)
+    async def configuration(self, interaction : discord.Interaction, application : str):
+
+        id = await self.prisma.application.find_first(
+            where={
+                'application': application,
+                'guildId': interaction.guild_id
+            }
+        )
+
+        options: List[discord.SelectOption] = []
+        questions : list = [question.question for question in await self.prisma.where_many('question', 'applicationId', id.id)]
+        emb = discord.Embed(title=f"{application} Editor", color=discord.Color.orange())
+        try:
+            for index, question in enumerate(questions):
+                emb.add_field(name=f"Question {index + 1}", value=question)
+                options.append(discord.SelectOption(label=f"Question {index + 1}", value=index))
+        except Exception as e:
+            print(type(e))
+            pass
+
+        view = AppConfigMenu(self.client, self, self.prisma, application, questions, emb, options, id.id)
+        try:
+            await interaction.response.send_message(embed=emb, view=view)
+        except Exception as e:
+            traceback.print_exc()
+
 
     # @app_group.command(name="import")
     # async def app_import(self, interaction : discord.Interaction, form : str):

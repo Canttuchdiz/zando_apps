@@ -133,3 +133,43 @@ class EditAdd(Modal, title="Response Edit"):
         field = self.fem.fields[0]
         self.fem.set_field_at(index=self.index, name=field.name, value=self.answer_response.value)
         await interaction.response.edit_message(embed=self.fem)
+
+class QuestionEdit(Modal, title="Question Edit"):
+
+    def __init__(self, questions: list, embed : Embed, index: int):
+        super().__init__(timeout=None)
+        self.questions = questions
+        self.index = index
+        self.new_question = ui.TextInput(label=f"Question {self.index + 1}", style=discord.TextStyle.paragraph, required=False)
+        self.add_item(self.new_question)
+        self.fem: Embed = embed
+
+    async def on_submit(self, interaction: discord.Interaction):
+        self.questions[self.index] = self.new_question.value
+        field = self.fem.fields[0]
+        self.fem.set_field_at(index=self.index, name=field.name, value=self.new_question.value)
+        await interaction.response.edit_message(embed=self.fem)
+
+class QuestionAddConfig(Modal, title='Question Addition'):
+
+    question = ui.TextInput(label='Question', style=discord.TextStyle.paragraph)
+
+    def __init__(self, bot, app_name, prisma, questions : list, emb : Embed, instance, options):
+        super().__init__(timeout=None)
+        self.client = bot
+        self.app_name = app_name
+        self.prisma = prisma
+        self.questions = questions
+        self.embed = emb
+        self.instance: discord.ui.View = instance
+        self.options: List[discord.SelectOption] = options
+
+
+    async def on_submit(self, interaction: discord.Interaction):
+
+        index = len(self.options)
+        self.embed.add_field(name=f"Question {index + 1}", value=self.question.value)
+        # self.options.append(discord.SelectOption(label=f"Question {index + 1}"))
+        self.questions.append(self.question.value)
+        self.options.append(discord.SelectOption(label=f"Question {index + 1}", value=index))
+        await interaction.response.edit_message(embed=self.embed, view=self.instance)

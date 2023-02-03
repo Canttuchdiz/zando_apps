@@ -92,7 +92,7 @@ class ApplyAdd(Modal, title="Response Input"):
     def __init__(self, bot, app_name, question : str, embed, answer : list, index : int):
         super().__init__(timeout=None)
         self.question = question
-        self.answer_response = ui.TextInput(label=self.question, style=discord.TextStyle.paragraph, required=True)
+        self.answer_response = ui.TextInput(label="Response", style=discord.TextStyle.paragraph, required=True)
         self.add_item(self.answer_response)
         self.client = bot
         self.app_name = app_name

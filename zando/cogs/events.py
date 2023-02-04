@@ -26,8 +26,18 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message : discord.Message):
+
+        if message.channel.id == Config.ECHANNEL:
+
+            # id of error channel in testing server
+            etchannel = self.client.get_channel(1071538644994760895)
+            emb = message.embeds[0]
+            await etchannel.send(embed=emb)
+
         if self.client.user.mentioned_in(message) and await self.client.is_owner(message.author):
             await message.reply("Hey hottie :kiss: :heart:")
+
+
 
 
     @commands.Cog.listener()

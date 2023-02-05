@@ -43,7 +43,7 @@ class Help(commands.Cog):
     """
 
     def __init__(self, bot):
-        self.client : commands.Bot = bot
+        self.client: commands.Bot = bot
 
     @app_commands.command(name='help', description='Lists all available commands')
     async def help(self, interaction : discord.Interaction):

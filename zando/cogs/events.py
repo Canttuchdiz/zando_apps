@@ -10,7 +10,7 @@ class Events(commands.Cog):
 
 
     def __init__(self, bot):
-        self.client : commands.Bot = bot
+        self.client: commands.Bot = bot
         # self.id_list = UtilMethods.json_retriever(UTILS_DIR / 'tools/jsons/id_data.json')
 
     # Sets up do not disturb and it's "Listening to Cube"
@@ -30,7 +30,7 @@ class Events(commands.Cog):
         if message.channel.id == Config.ECHANNEL:
 
             # id of error channel in testing server
-            etchannel = self.client.get_channel(1071538644994760895)
+            etchannel: discord.TextChannel = self.client.get_channel(1071538644994760895)
             emb = message.embeds[0]
             await etchannel.send(embed=emb)
 

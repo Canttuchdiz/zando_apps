@@ -51,6 +51,7 @@ class Application(commands.Cog):
 
         except Exception as e:
             traceback.print_exc()
+            return False
 
     # def valid_dec(func):
     #
@@ -89,6 +90,7 @@ class Application(commands.Cog):
 
         except Exception as e:
             traceback.print_exc()
+            return False
 
     async def app_autocomplete(self, interaction: discord.Interaction, current: str,) -> list:
 

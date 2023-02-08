@@ -122,7 +122,7 @@ class EditAdd(Modal, title="Response Edit"):
     def __init__(self, question: str, embed : Embed, answers : list, index: int):
         super().__init__(timeout=None)
         self.question = question
-        self.answer_response = ui.TextInput(label=self.question, style=discord.TextStyle.paragraph, required=True)
+        self.answer_response = ui.TextInput(label="Response", style=discord.TextStyle.paragraph, required=True)
         self.add_item(self.answer_response)
         self.fem: Embed = embed
         self.answers = answers

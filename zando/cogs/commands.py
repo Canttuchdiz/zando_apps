@@ -26,7 +26,6 @@ class Commands(commands.Cog):
         await ctx.send("Shutting down... :wave: bye!")
         await self.client.close()
 
-    @commands.is_owner()
     @commands.command(aliases=['guilds'])
     async def guildcount(self, ctx):
         await ctx.send(f"{len(self.client.guilds)}")

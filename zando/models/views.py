@@ -143,7 +143,7 @@ class Create(View):
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def cancel(self, interaction : discord.Interaction, button : discord.ui.Button):
-        await UtilMethods.cancel_interaction(self, "Cancellation successful", f"{self.app_name} was not created", interaction, self.instance)
+        await UtilMethods.cancel_interaction(self, f"{self.app_name} was not created", interaction)
 
 
     @discord.ui.button(label="Done", style=discord.ButtonStyle.green)
@@ -210,7 +210,7 @@ class AppConfigMenu(View):
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await UtilMethods.cancel_interaction(self, "Question setting session was closed", interaction, self.instance)
+        await UtilMethods.cancel_interaction(self, "Question setting session was closed", interaction)
 
 
 class AppEmbed(View):
@@ -240,7 +240,7 @@ class AppEmbed(View):
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await UtilMethods.cancel_interaction(self, "Embed configuration session was closed", interaction, self.instance)
+        await UtilMethods.cancel_interaction(self, "Embed configuration session was closed", interaction)
 
     @discord.ui.button(label="Done", style=discord.ButtonStyle.success)
     async def done(self, interaction: discord.Interaction, button: discord.ui.Button):

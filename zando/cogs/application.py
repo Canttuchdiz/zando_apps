@@ -8,7 +8,7 @@ from prisma.errors import UniqueViolationError
 from zando.utils.util import TableTypes, TypeConvert, UtilMethods
 from zando.utils.extentsions import PrismaExt
 from zando.utils.errors import InvalidChannel, InvalidApp, InvalidEmbed
-from zando.extentsions.callback import Apps, Create, AppConfigMenu, AppEmbed, ImportView
+from zando.models.callback import Apps, Create, AppConfigMenu, AppEmbed, ImportView
 import traceback
 from typing import Optional, Literal, Union, List
 from discord.ui import View
